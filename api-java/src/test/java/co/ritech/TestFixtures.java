@@ -34,7 +34,8 @@ public final class TestFixtures {
                         Duration.ofMinutes(15),
                         "",
                         "",
-                        "Administrator"),
+                        "Administrator",
+                        false),
                 new RitechProperties.Ai(
                         "template",
                         "",
@@ -48,6 +49,7 @@ public final class TestFixtures {
                 new RitechProperties.Notifications(
                         "RiTech <no-reply@test>", 3, Duration.ofMinutes(1), new BigDecimal("2.00")),
                 new RitechProperties.License("disabled", "/nonexistent/license.json", "classpath:unused", 30),
+                new RitechProperties.RateLimit(true, 20, 120, 300),
                 ZoneId.of("America/Bogota"));
     }
 

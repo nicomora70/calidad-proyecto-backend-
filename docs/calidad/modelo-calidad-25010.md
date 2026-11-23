@@ -28,7 +28,7 @@ Leyenda del estado: ✅ cumple con evidencia · 🟡 parcial · ⬜ pendiente ·
 ### 2.2 Eficiencia de desempeño
 | Subcaracterística | Métrica | Meta | Evidencia | Estado |
 |---|---|---|---|---|
-| Comportamiento temporal | p95 de `POST /api/simulations` (con caché de mercado) | ≤ 500 ms con 20 usuarios concurrentes | Prueba de carga k6 (Fase 6) | ⬜ |
+| Comportamiento temporal | p95 de `POST /api/v1/simulations` (con caché de mercado) | ≤ 500 ms con 20 usuarios concurrentes | `ops/k6/simulations.js`: el umbral hace fallar el CI; resumen en el artefacto `k6-summary` | ✅ |
 | Utilización de recursos | Memoria de la API | ≤ 75 % del límite del contenedor | `-XX:MaxRAMPercentage=75` | 🟡 |
 | Capacidad | Llamadas a Alpha Vantage por ventana de caché | 1 por TTL (6 h), aunque haya concurrencia | Caché + advisory lock (`MarketFetchLock`) | ✅ |
 
@@ -63,10 +63,12 @@ producto para desarrolladores**:
 | Confidencialidad | Endpoints de negocio que exigen autenticación | 100 % (salvo health, login, refresh, logout, docs) | `SecurityConfig`, `InstallationFlowIT` | ✅ |
 | Confidencialidad | Secretos guardados en claro | 0 (BCrypt para contraseñas, SHA-256 para refresh tokens) | `AuthService`, `RefreshToken` | ✅ |
 | Integridad | Simulaciones modificables después de creadas | 0 (entidad sin setters, sin endpoint de edición) | `Simulation` | ✅ |
-| No repudio / Responsabilidad | Acciones sensibles auditadas / acciones sensibles | 100 % de la lista de `task.md` | `audit_log`, `GET /api/audit` | ✅ |
+| No repudio / Responsabilidad | Acciones sensibles auditadas / acciones sensibles | 100 % de la lista de `task.md` | `audit_log`, `GET /api/v1/audit` | ✅ |
 | Autenticidad | Tokens firmados y validados (firma, emisor, vencimiento) | 100 % | `JwtServiceTest` | ✅ |
 | Resistencia | Bloqueo por fuerza bruta | 5 intentos → 15 min | `AuthServiceTest`, `InstallationFlowIT` | ✅ |
-| Resistencia | Vulnerabilidades críticas o altas en dependencias e imágenes | 0 | Dependabot / Trivy (Fase 6) | ⬜ |
+| Resistencia | Vulnerabilidades críticas corregibles en dependencias e imágenes | 0 (las altas se reportan) | Dependabot, Trivy en cada PR, Dependency-Check semanal (`security.yml`) | ✅ |
+| Resistencia | Peticiones por minuto antes de `429 RATE_LIMITED` | Login 20/IP · anónimas 120/IP · usuario 300 | `RateLimitFilter`, `RateLimitFilterTest`, paso del CI | ✅ |
+| Resistencia | Revisión OWASP ASVS nivel 2 | Sin brechas críticas | [revision-asvs-l2.md](revision-asvs-l2.md) (2 parciales documentadas) | ✅ |
 
 ### 2.7 Mantenibilidad
 | Subcaracterística | Métrica | Meta | Evidencia | Estado |
@@ -100,3 +102,4 @@ Se actualiza al cierre de cada fase con los datos del último CI de `main`.
 | Fecha | Versión | ✅ | 🟡 | ⬜ | Observaciones |
 |---|---|---|---|---|---|
 | 2026-11-22 | 0.2.0 (Fase 1) | 28 | 4 | 6 | Funcionalidad crítica, seguridad y mantenibilidad cubiertas; faltan desempeño medido, recuperabilidad y el endurecimiento de la Fase 6 |
+| 2026-11-23 | 0.7.0 (Fase 6) | 34 | 4 | 2 | Endurecimiento: rate limiting, cabeceras, HTTPS, escaneo de vulnerabilidades, ASVS L2, métricas y carga medida con k6. Pendientes de la Fase Q: aviso de IA en todas las salidas y reversión ante fallos de IA |

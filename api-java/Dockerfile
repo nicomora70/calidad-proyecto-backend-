@@ -18,9 +18,10 @@ WORKDIR /app
 COPY --from=build /workspace/target/ritech-api.jar app.jar
 USER ritech
 
-EXPOSE 8080
+# 8081 = management (Actuator, Prometheus): internal network only, never published
+EXPOSE 8080 8081
 ENV JAVA_OPTS="-XX:MaxRAMPercentage=75"
 HEALTHCHECK --interval=15s --timeout=3s --start-period=40s --retries=5 \
-  CMD curl -fs http://localhost:8080/actuator/health || exit 1
+  CMD curl -fs http://localhost:8081/actuator/health || exit 1
 
 ENTRYPOINT ["sh", "-c", "exec java $JAVA_OPTS -jar /app/app.jar"]

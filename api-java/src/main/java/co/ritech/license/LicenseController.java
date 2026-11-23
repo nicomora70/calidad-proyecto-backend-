@@ -16,7 +16,7 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 @RestController
-@RequestMapping("/api/license")
+@RequestMapping("/api/v1/license")
 @Tag(name = "License")
 @SecurityRequirement(name = "bearer")
 public class LicenseController {

@@ -69,7 +69,7 @@ class AiAlertControllerTest {
     void doneAlertReturns200WithDisclaimer() throws Exception {
         when(alerts.forSimulation(SIMULATION_ID)).thenReturn(alert(true));
 
-        mvc.perform(get("/api/simulations/" + SIMULATION_ID + "/alert").with(as(Role.INVESTOR, false)))
+        mvc.perform(get("/api/v1/simulations/" + SIMULATION_ID + "/alert").with(as(Role.INVESTOR, false)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("DONE"))
                 .andExpect(jsonPath("$.title").value("Título"))
@@ -80,7 +80,7 @@ class AiAlertControllerTest {
     void pendingAlertReturns202() throws Exception {
         when(alerts.forSimulation(SIMULATION_ID)).thenReturn(alert(false));
 
-        mvc.perform(get("/api/simulations/" + SIMULATION_ID + "/alert").with(as(Role.INVESTOR, false)))
+        mvc.perform(get("/api/v1/simulations/" + SIMULATION_ID + "/alert").with(as(Role.INVESTOR, false)))
                 .andExpect(status().isAccepted())
                 .andExpect(jsonPath("$.status").value("PENDING"));
     }
@@ -89,7 +89,7 @@ class AiAlertControllerTest {
     void alertOfSomeoneElsesSimulationIsNotFound() throws Exception {
         when(simulations.get(eq(SIMULATION_ID), any())).thenThrow(new SimulationNotFoundException(SIMULATION_ID));
 
-        mvc.perform(get("/api/simulations/" + SIMULATION_ID + "/alert").with(as(Role.INVESTOR, false)))
+        mvc.perform(get("/api/v1/simulations/" + SIMULATION_ID + "/alert").with(as(Role.INVESTOR, false)))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.code").value("SIMULATION_NOT_FOUND"));
         verify(alerts, never()).forSimulation(any());
@@ -99,13 +99,13 @@ class AiAlertControllerTest {
     void simulationWithoutAlertIsNotFound() throws Exception {
         when(alerts.forSimulation(SIMULATION_ID)).thenThrow(new AiAlertNotFoundException(SIMULATION_ID));
 
-        mvc.perform(get("/api/simulations/" + SIMULATION_ID + "/alert").with(as(Role.INVESTOR, false)))
+        mvc.perform(get("/api/v1/simulations/" + SIMULATION_ID + "/alert").with(as(Role.INVESTOR, false)))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.code").value("AI_ALERT_NOT_FOUND"));
     }
 
     @Test
     void anonymousIsUnauthorized() throws Exception {
-        mvc.perform(get("/api/me/alerts")).andExpect(status().isUnauthorized());
+        mvc.perform(get("/api/v1/me/alerts")).andExpect(status().isUnauthorized());
     }
 }

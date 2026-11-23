@@ -65,11 +65,13 @@ class JwtServiceTest {
                         properties.security().lockDuration(),
                         "",
                         "",
-                        "Administrator"),
+                        "Administrator",
+                        false),
                 properties.ai(),
                 properties.news(),
                 properties.notifications(),
                 properties.license(),
+                properties.rateLimit(),
                 properties.timezone());
 
         assertThatThrownBy(() -> config.jwtSigningKey(weak)).isInstanceOf(IllegalStateException.class);

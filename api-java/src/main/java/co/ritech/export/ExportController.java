@@ -31,7 +31,7 @@ public class ExportController {
         this.service = service;
     }
 
-    @GetMapping("/api/me/simulations/export")
+    @GetMapping("/api/v1/me/simulations/export")
     @Operation(summary = "Own simulation history as CSV (inclusive dates)")
     public ResponseEntity<byte[]> mySimulations(
             @Parameter(hidden = true) CurrentUser user,
@@ -40,7 +40,7 @@ public class ExportController {
         return file("mis-simulaciones.csv", service.simulations(user.id(), user.id(), from, to));
     }
 
-    @GetMapping("/api/simulations/export")
+    @GetMapping("/api/v1/simulations/export")
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "All simulations as CSV, optionally for one user (ADMIN)")
     public ResponseEntity<byte[]> allSimulations(
@@ -51,7 +51,7 @@ public class ExportController {
         return file("simulaciones.csv", service.simulations(user.id(), userId, from, to));
     }
 
-    @GetMapping("/api/audit/export")
+    @GetMapping("/api/v1/audit/export")
     @PreAuthorize("hasAnyRole('ADMIN', 'IT_MANAGER')")
     @Operation(summary = "Audit log as CSV (ADMIN, IT_MANAGER)")
     public ResponseEntity<byte[]> audit(

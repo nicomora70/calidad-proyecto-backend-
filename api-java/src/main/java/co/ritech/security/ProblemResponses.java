@@ -40,8 +40,7 @@ final class ProblemResponses {
                 "You do not have permission to perform this action");
     }
 
-    private static void write(
-            ObjectMapper mapper, HttpServletResponse response, HttpStatus status, String code, String detail)
+    static void write(ObjectMapper mapper, HttpServletResponse response, HttpStatus status, String code, String detail)
             throws IOException {
         ProblemDetail problem = ApiExceptionHandler.problem(status, code, detail);
         response.setStatus(status.value());

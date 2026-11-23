@@ -24,6 +24,7 @@ public record RitechProperties(
         News news,
         Notifications notifications,
         License license,
+        @DefaultValue RateLimit rateLimit,
         @DefaultValue("America/Bogota") ZoneId timezone) {
 
     public record Simulation(
@@ -58,7 +59,9 @@ public record RitechProperties(
             @DefaultValue("15m") Duration lockDuration,
             @DefaultValue("") String bootstrapAdminEmail,
             @DefaultValue("") String bootstrapAdminPassword,
-            @DefaultValue("Administrator") String bootstrapAdminName) {}
+            @DefaultValue("Administrator") String bootstrapAdminName,
+            /* Redirect plain HTTP to HTTPS (behind the TLS proxy); off for local development */
+            @DefaultValue("false") boolean requireHttps) {}
 
     public record Ai(
             /* template (no external calls) | gemini */
@@ -105,4 +108,11 @@ public record RitechProperties(
             String publicKeyLocation,
 
             @DefaultValue("30") int expiryWarningDays) {}
+
+    /** Requests per minute (token bucket). Login/refresh are keyed by client IP. */
+    public record RateLimit(
+            @DefaultValue("true") boolean enabled,
+            @DefaultValue("20") int authPerMinute,
+            @DefaultValue("120") int anonymousPerMinute,
+            @DefaultValue("300") int userPerMinute) {}
 }

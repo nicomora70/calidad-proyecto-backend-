@@ -47,8 +47,8 @@ Prioridad: **M** = obligatorio (*must*) · **S** = deseable (*should*). Estado: 
 | RNF-05 | Cobertura ≥ 80 % en clases `*Service` | Mantenibilidad — capacidad de ser probado | Regla JaCoCo en `verify` | ✅ |
 | RNF-06 | Logs JSON con `traceId` propagado al motor de cálculo | Mantenibilidad — capacidad de ser analizado | `RequestIdFilter`, logs JSON en calc-engine | ✅ |
 | RNF-07 | Instalación con `docker compose up` en ≤ 3 pasos | Flexibilidad — instalabilidad | Smoke test de CI | ✅ |
-| RNF-08 | p95 ≤ 500 ms en `POST /api/simulations` | Eficiencia de desempeño | k6 (Fase 6) | ⬜ |
-| RNF-09 | 0 vulnerabilidades críticas o altas | Seguridad — resistencia | Trivy / Dependency-Check (Fase 6) | ⬜ |
+| RNF-08 | p95 ≤ 500 ms en `POST /api/v1/simulations` con 20 usuarios concurrentes | Eficiencia de desempeño | `ops/k6/simulations.js` (umbral en el CI, artefacto `k6-summary`) | ✅ |
+| RNF-09 | 0 vulnerabilidades críticas corregibles; las altas se reportan | Seguridad — resistencia | Trivy en cada PR, Dependency-Check semanal (`security.yml`), Dependabot | ✅ |
 | RNF-10 | Respaldo diario con restauración probada | Fiabilidad — recuperabilidad | `pg-backup` + paso "Backup and restore" del CI | ✅ |
 
 ## Gestión de cambios en los requisitos

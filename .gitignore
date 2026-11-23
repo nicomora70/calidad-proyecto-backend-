@@ -23,3 +23,7 @@ Thumbs.db
 *.dump
 # Vendor license key: must never be committed
 private-key.pem
+
+# k6 load test output
+ops/k6/k6-summary.json
+/openapi.yaml

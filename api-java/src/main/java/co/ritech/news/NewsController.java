@@ -23,7 +23,7 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 @RestController
-@RequestMapping("/api/news")
+@RequestMapping("/api/v1/news")
 @Tag(name = "News")
 @SecurityRequirement(name = "bearer")
 public class NewsController {

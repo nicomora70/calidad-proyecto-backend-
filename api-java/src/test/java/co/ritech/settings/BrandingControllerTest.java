@@ -53,7 +53,7 @@ class BrandingControllerTest {
     void getIsPublic() throws Exception {
         when(service.get()).thenReturn(SAMPLE);
 
-        mvc.perform(get("/api/settings/branding"))
+        mvc.perform(get("/api/v1/settings/branding"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.companyName").value("Cliente"));
     }
@@ -61,11 +61,11 @@ class BrandingControllerTest {
     @Test
     void putRequiresAuthenticationAndAdmin() throws Exception {
         String body = "{\"productName\":\"X\"}";
-        mvc.perform(put("/api/settings/branding")
+        mvc.perform(put("/api/v1/settings/branding")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
                 .andExpect(status().isUnauthorized());
-        mvc.perform(put("/api/settings/branding")
+        mvc.perform(put("/api/v1/settings/branding")
                         .with(as(Role.INVESTOR))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
@@ -77,17 +77,17 @@ class BrandingControllerTest {
     void adminUpdatesWithValidation() throws Exception {
         when(service.update(any(), any())).thenReturn(SAMPLE);
 
-        mvc.perform(put("/api/settings/branding")
+        mvc.perform(put("/api/v1/settings/branding")
                         .with(as(Role.ADMIN))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"primaryColor\":\"#12345G\"}"))
                 .andExpect(status().isBadRequest());
-        mvc.perform(put("/api/settings/branding")
+        mvc.perform(put("/api/v1/settings/branding")
                         .with(as(Role.ADMIN))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"logoUrl\":\"http://insecure.co/logo.png\"}"))
                 .andExpect(status().isBadRequest());
-        mvc.perform(put("/api/settings/branding")
+        mvc.perform(put("/api/v1/settings/branding")
                         .with(as(Role.ADMIN))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"primaryColor\":\"#12345f\",\"logoUrl\":\"https://cdn.co/logo.png\"}"))

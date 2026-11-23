@@ -101,7 +101,7 @@
 - [ ] **(P)** Protección de la rama `main`: PR obligatorio y los checks de CI requeridos (27001 A.8.4 y A.8.32)
 - [ ] Plantillas de *issue* (defecto con severidad) y de PR (requisito y prueba) en `.github/`
 - [ ] Procedimiento de supresión definitiva de datos personales y aviso de privacidad (Ley 1581, 27001 A.5.34)
-- [ ] Metas de desempeño medidas con k6 (25010 §2.2), junto con la Fase 6
+- [x] Metas de desempeño medidas con k6 (25010 §2.2), junto con la Fase 6
 - [ ] Respaldo y restauración probados (25010 recuperabilidad; 27001 A.8.13), junto con la Fase 5
 - [ ] Actualizar al cierre de cada fase: evaluación 25010 (§3), informe de pruebas (§8), matriz de trazabilidad y registro de riesgos
 
@@ -152,15 +152,16 @@
 - [x] `docs/manual-operacion.md` para el IT_MANAGER del cliente
 - [x] `docs/terminos-de-uso.md` con el aviso de que el software no constituye asesoría financiera
 
-## Fase 6 — Endurecimiento y entrega al frontend
+## Fase 6 — Endurecimiento y entrega al frontend ✅
 
-- [ ] Rate limiting por IP y usuario (Bucket4j), con más rigor en `/api/auth/login`
-- [ ] Cabeceras de seguridad, CORS solo para el dominio del frontend y HTTPS obligatorio detrás del proxy
-- [ ] Revisión OWASP ASVS nivel 2 y escaneo de dependencias (Dependabot, OWASP Dependency-Check, Trivy sobre las imágenes)
-- [ ] Contrato OpenAPI versionado (`/v3/api-docs` exportado a `openapi.yaml` en cada release) para el repo del frontend
-- [ ] Versionado de la API (`/api/v1`) antes de la primera venta
-- [ ] Métricas en Prometheus (`/actuator/prometheus`) y un dashboard básico opcional
-- [ ] Pruebas de carga con k6 sobre `POST /api/simulations`
+- [x] Rate limiting por IP y usuario (Bucket4j), con más rigor en `/api/v1/auth/login` (`429 RATE_LIMITED`)
+- [x] Cabeceras de seguridad, CORS solo para el dominio del frontend y HTTPS obligatorio detrás del proxy (`REQUIRE_HTTPS`)
+- [x] Revisión OWASP ASVS nivel 2 (`docs/calidad/revision-asvs-l2.md`) y escaneo de dependencias (Dependabot, OWASP Dependency-Check, Trivy sobre las imágenes)
+- [x] Contrato OpenAPI versionado (`/v3/api-docs` exportado a `openapi.yaml` en cada release) para el repo del frontend (`docs/integracion-frontend.md`)
+- [x] Versionado de la API (`/api/v1`) antes de la primera venta
+- [x] Métricas en Prometheus (`/actuator/prometheus`, puerto interno 8081)
+- [ ] (Opcional) Dashboard básico de Grafana
+- [x] Pruebas de carga con k6 sobre `POST /api/v1/simulations` (`ops/k6/simulations.js`, en el CI)
 
 ---
 

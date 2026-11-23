@@ -18,7 +18,7 @@ import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
 @RestController
-@RequestMapping("/api/settings/branding")
+@RequestMapping("/api/v1/settings/branding")
 @Tag(name = "Settings")
 public class BrandingController {
 

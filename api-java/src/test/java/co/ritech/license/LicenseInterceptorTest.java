@@ -32,13 +32,14 @@ class LicenseInterceptorTest {
     void readOnlyBlocksWritesButNotReadsLoginOrRenewal() {
         var license = readOnly();
 
-        assertThatThrownBy(() -> call(license, "POST", "/api/simulations")).isInstanceOf(LicenseExpiredException.class);
-        assertThatThrownBy(() -> call(license, "PUT", "/api/me/notification-preferences"))
+        assertThatThrownBy(() -> call(license, "POST", "/api/v1/simulations"))
                 .isInstanceOf(LicenseExpiredException.class);
-        assertThat(call(license, "GET", "/api/me/simulations")).isTrue();
-        assertThat(call(license, "POST", "/api/auth/login")).isTrue();
-        assertThat(call(license, "POST", "/api/auth/change-password")).isTrue();
-        assertThat(call(license, "POST", "/api/license")).isTrue();
+        assertThatThrownBy(() -> call(license, "PUT", "/api/v1/me/notification-preferences"))
+                .isInstanceOf(LicenseExpiredException.class);
+        assertThat(call(license, "GET", "/api/v1/me/simulations")).isTrue();
+        assertThat(call(license, "POST", "/api/v1/auth/login")).isTrue();
+        assertThat(call(license, "POST", "/api/v1/auth/change-password")).isTrue();
+        assertThat(call(license, "POST", "/api/v1/license")).isTrue();
     }
 
     @Test
@@ -47,34 +48,36 @@ class LicenseInterceptorTest {
         when(license.writable()).thenReturn(true);
         when(license.hasModule(Module.SIMULATIONS)).thenReturn(true);
 
-        assertThat(call(license, "POST", "/api/simulations")).isTrue();
-        assertThatThrownBy(() -> call(license, "GET", "/api/news"))
+        assertThat(call(license, "POST", "/api/v1/simulations")).isTrue();
+        assertThatThrownBy(() -> call(license, "GET", "/api/v1/news"))
                 .isInstanceOf(ModuleNotLicensedException.class)
                 .hasMessageContaining("NEWS");
     }
 
     @Test
     void endpointToModuleMapping() {
-        assertThat(LicenseInterceptor.moduleFor("POST", "/api/simulations")).isEqualTo(Module.SIMULATIONS);
-        assertThat(LicenseInterceptor.moduleFor("GET", "/api/simulations")).isNull(); // history is always readable
-        assertThat(LicenseInterceptor.moduleFor("GET", "/api/dashboard/statistics"))
+        assertThat(LicenseInterceptor.moduleFor("POST", "/api/v1/simulations")).isEqualTo(Module.SIMULATIONS);
+        assertThat(LicenseInterceptor.moduleFor("GET", "/api/v1/simulations")).isNull(); // history is always readable
+        assertThat(LicenseInterceptor.moduleFor("GET", "/api/v1/dashboard/statistics"))
                 .isEqualTo(Module.DASHBOARD);
-        assertThat(LicenseInterceptor.moduleFor("GET", "/api/simulations/1/alert"))
+        assertThat(LicenseInterceptor.moduleFor("GET", "/api/v1/simulations/1/alert"))
                 .isEqualTo(Module.AI_ALERTS);
-        assertThat(LicenseInterceptor.moduleFor("GET", "/api/me/alerts")).isEqualTo(Module.AI_ALERTS);
-        assertThat(LicenseInterceptor.moduleFor("GET", "/api/news")).isEqualTo(Module.NEWS);
-        assertThat(LicenseInterceptor.moduleFor("GET", "/api/news/sentiment")).isEqualTo(Module.NEWS);
-        assertThat(LicenseInterceptor.moduleFor("GET", "/api/me/notifications")).isEqualTo(Module.NOTIFICATIONS);
-        assertThat(LicenseInterceptor.moduleFor("PATCH", "/api/me/notifications/1/read"))
+        assertThat(LicenseInterceptor.moduleFor("GET", "/api/v1/me/alerts")).isEqualTo(Module.AI_ALERTS);
+        assertThat(LicenseInterceptor.moduleFor("GET", "/api/v1/news")).isEqualTo(Module.NEWS);
+        assertThat(LicenseInterceptor.moduleFor("GET", "/api/v1/news/sentiment"))
+                .isEqualTo(Module.NEWS);
+        assertThat(LicenseInterceptor.moduleFor("GET", "/api/v1/me/notifications"))
                 .isEqualTo(Module.NOTIFICATIONS);
-        assertThat(LicenseInterceptor.moduleFor("PUT", "/api/me/notification-preferences"))
+        assertThat(LicenseInterceptor.moduleFor("PATCH", "/api/v1/me/notifications/1/read"))
                 .isEqualTo(Module.NOTIFICATIONS);
-        assertThat(LicenseInterceptor.moduleFor("POST", "/api/projections")).isEqualTo(Module.PROJECTIONS);
-        assertThat(LicenseInterceptor.moduleFor("GET", "/api/me/simulations/export"))
+        assertThat(LicenseInterceptor.moduleFor("PUT", "/api/v1/me/notification-preferences"))
+                .isEqualTo(Module.NOTIFICATIONS);
+        assertThat(LicenseInterceptor.moduleFor("POST", "/api/v1/projections")).isEqualTo(Module.PROJECTIONS);
+        assertThat(LicenseInterceptor.moduleFor("GET", "/api/v1/me/simulations/export"))
                 .isEqualTo(Module.EXPORTS);
-        assertThat(LicenseInterceptor.moduleFor("GET", "/api/audit/export")).isEqualTo(Module.EXPORTS);
-        assertThat(LicenseInterceptor.moduleFor("GET", "/api/audit")).isNull();
-        assertThat(LicenseInterceptor.moduleFor("GET", "/api/settings/branding"))
+        assertThat(LicenseInterceptor.moduleFor("GET", "/api/v1/audit/export")).isEqualTo(Module.EXPORTS);
+        assertThat(LicenseInterceptor.moduleFor("GET", "/api/v1/audit")).isNull();
+        assertThat(LicenseInterceptor.moduleFor("GET", "/api/v1/settings/branding"))
                 .isNull();
     }
 }

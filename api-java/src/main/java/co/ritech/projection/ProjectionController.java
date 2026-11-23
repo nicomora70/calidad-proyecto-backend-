@@ -22,7 +22,7 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 
 @RestController
-@RequestMapping("/api/projections")
+@RequestMapping("/api/v1/projections")
 @Tag(name = "Projections")
 @SecurityRequirement(name = "bearer")
 public class ProjectionController {

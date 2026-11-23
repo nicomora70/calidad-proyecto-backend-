@@ -1,0 +1,9 @@
+# Accepted findings: each one has a reason and an expiry date (Trivy fails again after it).
+# Review with the Spring Boot 4 / Spring Framework 7 migration (the only line with the fix).
+
+# spring-webmvc 6.2.19: RCE via XsltView. The API does not use XsltView (JSON only).
+CVE-2026-47884 exp:2027-02-28
+
+# spring-webmvc 6.2.19: stream corruption in Server-Sent Events with views. No SSE in the API.
+# If the optional /api/v1/me/notifications/stream (SSE) is built, this must be re-evaluated first.
+CVE-2026-47890 exp:2027-02-28

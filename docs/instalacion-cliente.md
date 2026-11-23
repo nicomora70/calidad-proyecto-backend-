@@ -32,7 +32,7 @@ del proxy, y Postgres y el motor de cálculo no publican ningún puerto.
 4. Arrancar:
    ```bash
    docker compose up -d --build --wait
-   curl -s http://localhost:8080/api/health      # {"status":"UP",...}
+   curl -s http://localhost:8080/api/v1/health      # {"status":"UP",...}
    ```
 5. Primer ingreso: el ADMIN inicial entra con `BOOTSTRAP_ADMIN_EMAIL` y la contraseña temporal,
    y el sistema le exige cambiarla. Después crea los demás usuarios, entre ellos un IT_MANAGER.
@@ -44,12 +44,13 @@ Caddy obtiene y renueva el certificado de Let's Encrypt automáticamente. Ejempl
 ```
 api.empresa.com {
     reverse_proxy localhost:8080
-    header {
-        Strict-Transport-Security "max-age=31536000; includeSubDomains"
-        X-Content-Type-Options nosniff
-    }
 }
 ```
+
+Con el proxy activo se pone `REQUIRE_HTTPS=true` en `.env`: la API redirige cualquier petición
+HTTP a HTTPS y envía HSTS. Las cabeceras de seguridad (CSP, `X-Content-Type-Options`,
+`X-Frame-Options`, `Referrer-Policy`) ya las envía la API, así que el proxy no tiene que repetirlas.
+`CORS_ALLOWED_ORIGINS` debe tener solo el dominio del frontend (p. ej. `https://app.empresa.com`).
 
 La API ya confía en `X-Forwarded-*` (`server.forward-headers-strategy=framework`), así que la
 auditoría registra la IP real del cliente. Con Nginx funciona igual: `proxy_pass` hacia
@@ -85,9 +86,9 @@ Así la restauración queda probada de forma continua.
 ## 5. Actualización de versión
 
 1. Revisar las notas de la versión y hacer un respaldo inmediato (§4).
-2. `git pull` (o cambiar la etiqueta de imagen, p. ej. `ghcr.io/<owner>/ritech-api:0.6.0`).
+2. `git pull` (o cambiar la etiqueta de imagen, p. ej. `ghcr.io/<owner>/ritech-api:0.7.0`).
 3. `docker compose up -d --build --wait`. Flyway aplica las migraciones nuevas al arrancar.
-4. Verificar `/api/health` y el estado de la licencia (`GET /api/license`).
+4. Verificar `/api/v1/health` y el estado de la licencia (`GET /api/v1/license`).
 
 Si algo falla, se vuelve a la etiqueta anterior y se restaura el respaldo del paso 1. Las
 migraciones no tienen paso de reversión automática.

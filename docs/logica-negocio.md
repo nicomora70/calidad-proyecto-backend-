@@ -138,7 +138,7 @@ estadísticas de la sección 3.
    proveedores de pago no se llaman y la alerta queda `FAILED` con motivo `BUDGET_EXCEEDED`.
 4. Un fallo del proveedor (red, 5xx tras 3 intentos, 4xx, respuesta inválida) solo marca la
    alerta como `FAILED`; la simulación nunca se revierte.
-5. `GET /api/simulations/{id}/alert` responde 202 mientras está `PENDING` y 200 con `DONE` o
+5. `GET /api/v1/simulations/{id}/alert` responde 202 mientras está `PENDING` y 200 con `DONE` o
    `FAILED`. Aplica la misma regla de dueño que la simulación.
 
 Toda alerta lleva el aviso "Contenido generado por IA; no constituye asesoría financiera".
@@ -154,16 +154,16 @@ Desde la Fase 3 el prompt (`alert-v2`) incluye los titulares recientes guardados
 3. Con un proveedor de cuota limitada se permiten como máximo `NEWS_MAX_DAILY_CALLS` descargas
    por día (4 por defecto, de las 25 gratuitas). Al superarlo → `429 NEWS_QUOTA_EXCEEDED`.
    Una falla programada solo queda en el log; un refresco manual fallido → `502 NEWS_UNAVAILABLE`.
-4. `GET /api/news`: feed paginado (más reciente primero), con filtros `from`/`to` (fecha de
+4. `GET /api/v1/news`: feed paginado (más reciente primero), con filtros `from`/`to` (fecha de
    publicación, inclusivas) y `sentiment` (etiqueta, sin distinguir mayúsculas).
-5. `GET /api/news/sentiment?date=`: **Python** promedia los puntajes del día y devuelve la
+5. `GET /api/v1/news/sentiment?date=`: **Python** promedia los puntajes del día y devuelve la
    etiqueta y la distribución (alcista, neutral, bajista). Escala de Alpha Vantage:
    ≤ −0,35 Bearish · ≤ −0,15 Somewhat-Bearish · < 0,15 Neutral · < 0,35 Somewhat-Bullish · resto Bullish.
 6. La alerta con IA (CU-05) recibe los últimos 5 titulares de las 48 h previas con su etiqueta.
 
 ### CU-07 Notificaciones (Fase 4)
 Canales: en la app (bandeja) y correo. Cada usuario elige canales y umbral en
-`/api/me/notification-preferences`. Mientras no los cambie se usan los valores por defecto:
+`/api/v1/me/notification-preferences`. Mientras no los cambie se usan los valores por defecto:
 ambos canales activos y umbral `NOTIFICATION_VARIATION_THRESHOLD_PCT` (2 %).
 
 | Disparador | Destinatarios | Deduplicación |
@@ -181,7 +181,7 @@ Entrega:
 3. Sin `MAIL_HOST` no se crean correos: solo bandeja. `emailAvailable` en las preferencias
    lo indica al frontend.
 4. Los disparadores son *best-effort*: un fallo queda en el log y nunca afecta la operación original.
-5. `PATCH /api/me/notifications/{id}/read` es idempotente; una notificación ajena → 404.
+5. `PATCH /api/v1/me/notifications/{id}/read` es idempotente; una notificación ajena → 404.
 
 ### CU-08 Licencia
 El archivo `ritech-license-v1` trae el `payload` (JSON en base64 con empresa, plan, `maxUsers`,
@@ -194,12 +194,12 @@ El archivo `ritech-license-v1` trae el `payload` (JSON en base64 con empresa, pl
 | `enforced` (clientes) | Módulos según el plan; límites y vencimiento aplicados |
 
 - Al arrancar se vuelve a verificar la última licencia guardada. Si no hay ninguna, se instala
-  `LICENSE_FILE`. Renovación: `POST /api/license` (IT_MANAGER o ADMIN), sin reiniciar.
+  `LICENSE_FILE`. Renovación: `POST /api/v1/license` (IT_MANAGER o ADMIN), sin reiniciar.
 - Una licencia con firma inválida, formato desconocido o ya vencida → `400 LICENSE_INVALID`.
 - Estados: `ACTIVE`; `EXPIRING` (≤ 30 días; avisos a IT_MANAGER/ADMIN a 30 y 7 días);
   `EXPIRED` (desde el día siguiente a `expiresAt`); `MISSING` (no hay licencia).
 - `EXPIRED` o `MISSING` → **modo solo lectura**: toda escritura responde `402 LICENSE_EXPIRED`,
-  salvo `/api/auth/**` y `/api/license`. Las consultas siguen funcionando.
+  salvo `/api/v1/auth/**` y `/api/v1/license`. Las consultas siguen funcionando.
 - Módulo fuera del plan → `403 MODULE_NOT_LICENSED`. Los procesos en segundo plano del módulo
   (alertas IA, descarga de noticias, notificaciones) tampoco corren. Los avisos de seguridad y
   de licencia se envían en todos los planes.
@@ -212,11 +212,11 @@ El archivo `ritech-license-v1` trae el `payload` (JSON en base64 con empresa, pl
 | `ENTERPRISE` | + `PROJECTIONS` |
 
 ### CU-10 Exportes y branding
-- CSV (UTF-8 con BOM, para Excel): `GET /api/me/simulations/export`, `GET /api/simulations/export`
-  (ADMIN) y `GET /api/audit/export` (ADMIN, IT_MANAGER). Máximo 50.000 filas por archivo; las
+- CSV (UTF-8 con BOM, para Excel): `GET /api/v1/me/simulations/export`, `GET /api/v1/simulations/export`
+  (ADMIN) y `GET /api/v1/audit/export` (ADMIN, IT_MANAGER). Máximo 50.000 filas por archivo; las
   celdas de texto que empiezan con `= + - @` se neutralizan (inyección de fórmulas). Cada
   exportación queda auditada (`EXPORT_CREATED`).
-- `GET /api/settings/branding` es público (pantalla de inicio de sesión): nombre del producto,
+- `GET /api/v1/settings/branding` es público (pantalla de inicio de sesión): nombre del producto,
   empresa (por defecto, la de la licencia), color `#RRGGBB`, logo `https://` y aviso legal.
   `PUT` (ADMIN); un campo vacío vuelve al valor por defecto.
 
@@ -243,10 +243,10 @@ que el frontend usa para traducir el mensaje.
 | 400 | `PASSWORD_REUSED` | La nueva contraseña es igual a la actual |
 | 401 | `UNAUTHORIZED` | Falta el token o es inválido |
 | 401 | `INVALID_CREDENTIALS` | Correo o contraseña incorrectos (mensaje genérico) |
-| 401 | `TOKEN_EXPIRED` | Token de acceso vencido: hay que llamar a `/api/auth/refresh` |
+| 401 | `TOKEN_EXPIRED` | Token de acceso vencido: hay que llamar a `/api/v1/auth/refresh` |
 | 401 | `INVALID_REFRESH_TOKEN` | Refresh token desconocido, vencido o revocado: hay que volver a iniciar sesión |
 | 403 | `FORBIDDEN` | Rol sin permiso |
-| 403 | `PASSWORD_CHANGE_REQUIRED` | Contraseña temporal: solo se permite `/api/auth/change-password`, `/api/auth/logout`, `/api/auth/refresh` y `/api/me` |
+| 403 | `PASSWORD_CHANGE_REQUIRED` | Contraseña temporal: solo se permite `/api/v1/auth/change-password`, `/api/v1/auth/logout`, `/api/v1/auth/refresh` y `/api/v1/me` |
 | 404 | `USER_NOT_FOUND` / `SIMULATION_NOT_FOUND` | Recurso inexistente |
 | 404 | `NOTIFICATION_NOT_FOUND` | Notificación inexistente o de otro usuario |
 | 404 | `AI_ALERT_NOT_FOUND` | La simulación no tiene alerta (creada antes de la Fase 2) |
@@ -255,6 +255,7 @@ que el frontend usa para traducir el mensaje.
 | 409 | `LICENSE_USER_LIMIT` | Se superó el máximo de usuarios de la licencia |
 | 402 | `LICENSE_EXPIRED` | Licencia vencida (modo solo lectura) |
 | 423 | `ACCOUNT_LOCKED` | Demasiados intentos fallidos |
+| 429 | `RATE_LIMITED` | Se superó el límite de peticiones por minuto (login por IP, resto por usuario o IP); ver `Retry-After` |
 | 429 | `NEWS_QUOTA_EXCEEDED` | Se alcanzó el tope diario de descargas de noticias |
 | 502 | `MARKET_DATA_UNAVAILABLE` | Falló el proveedor de mercado |
 | 502 | `NEWS_UNAVAILABLE` | Falló el proveedor de noticias en un refresco manual |

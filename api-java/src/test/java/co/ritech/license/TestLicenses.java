@@ -66,7 +66,7 @@ public final class TestLicenses {
         }
     }
 
-    /** JSON body for POST /api/license. */
+    /** JSON body for POST /api/v1/license. */
     public static String json(LicenseFile file) {
         return "{\"format\":\"" + file.format() + "\",\"payload\":\"" + file.payload() + "\",\"signature\":\""
                 + file.signature() + "\"}";

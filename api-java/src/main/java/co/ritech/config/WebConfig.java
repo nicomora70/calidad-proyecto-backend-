@@ -40,9 +40,9 @@ public class WebConfig implements WebMvcConfigurer {
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
-        registry.addInterceptor(new PasswordChangeRequiredInterceptor()).addPathPatterns("/api/**");
+        registry.addInterceptor(new PasswordChangeRequiredInterceptor()).addPathPatterns("/api/v1/**");
         license.ifAvailable(service ->
-                registry.addInterceptor(new LicenseInterceptor(service)).addPathPatterns("/api/**"));
+                registry.addInterceptor(new LicenseInterceptor(service)).addPathPatterns("/api/v1/**"));
     }
 
     @Bean

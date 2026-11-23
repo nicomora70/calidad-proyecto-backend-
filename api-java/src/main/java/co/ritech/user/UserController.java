@@ -31,7 +31,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 
 @RestController
-@RequestMapping("/api/users")
+@RequestMapping("/api/v1/users")
 @PreAuthorize("hasRole('ADMIN')")
 @Tag(name = "Users (ADMIN)")
 @SecurityRequirement(name = "bearer")

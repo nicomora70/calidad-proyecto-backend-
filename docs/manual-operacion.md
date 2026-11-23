@@ -7,22 +7,28 @@ en [instalacion-cliente.md](instalacion-cliente.md).
 
 | Qué revisar | Cómo | Esperado |
 |---|---|---|
-| API | `GET /api/health` | `{"status":"UP"}` |
+| API | `GET /api/v1/health` | `{"status":"UP"}` |
 | Contenedores | `docker compose ps` | `postgres`, `calc-engine`, `api` y `pg-backup` en *running* (*healthy* donde aplique) |
 | Logs | `docker compose logs --since 1h api` | JSON con `traceId`; filtrar por `"level":"ERROR"` |
 | Espacio en disco | `df -h` y `du -sh backups/` | Menos del 80 % de uso |
+| Salud detallada (BD, disco) | `docker compose exec api curl -s localhost:8081/actuator/health` | `"status":"UP"` |
+| Métricas | `docker compose exec api curl -s localhost:8081/actuator/prometheus` | Formato Prometheus (`http_server_requests_seconds_*`, `jvm_*`, `hikaricp_*`) |
+
+El puerto de gestión 8081 no se publica. Para llevar las métricas a un Prometheus propio, se
+agrega ese servicio a la red `internal` del `docker-compose.yml` con el destino `api:8081`
+y la ruta `/actuator/prometheus`.
 
 Cuando un usuario reporta un error, la respuesta trae la cabecera `X-Request-Id`. Con ese valor
 se busca la traza completa en los logs: `docker compose logs api | grep <id>`.
 
 ## 2. Licencia
 
-- **Consultar**: `GET /api/license` (IT_MANAGER o ADMIN). Muestra el estado (`ACTIVE`,
+- **Consultar**: `GET /api/v1/license` (IT_MANAGER o ADMIN). Muestra el estado (`ACTIVE`,
   `EXPIRING`, `EXPIRED`, `MISSING`), el plan, los módulos, los usuarios activos y los días restantes.
 - **Avisos**: 30 y 7 días antes del vencimiento llega una notificación al IT_MANAGER y al ADMIN.
 - **Renovar**: enviar el contenido del archivo `license.json` recibido de RiTech:
   ```bash
-  curl -X POST https://api.empresa.com/api/license \
+  curl -X POST https://api.empresa.com/api/v1/license \
        -H "Authorization: Bearer <token>" -H "Content-Type: application/json" \
        --data @license.json
   ```
@@ -53,9 +59,14 @@ Si se usa un módulo que no está en el plan, la API responde `403 MODULE_NOT_LI
 
 - Las notificaciones de tipo **SECURITY_EVENT** avisan de **cuentas bloqueadas** (5 intentos
   fallidos) y de **posible robo de sesión** (reutilización de un refresh token). Revisar el
-  usuario afectado en la auditoría: `GET /api/audit?action=ACCOUNT_LOCKED`.
+  usuario afectado en la auditoría: `GET /api/v1/audit?action=ACCOUNT_LOCKED`.
 - Exportar la auditoría para un control o una auditoría externa:
-  `GET /api/audit/export?from=2026-01-01&to=2026-12-31` (CSV). La exportación queda auditada.
+  `GET /api/v1/audit/export?from=2026-01-01&to=2026-12-31` (CSV). La exportación queda auditada.
+- **Límite de peticiones**: por encima de `RATE_LIMIT_*_PER_MINUTE` (`.env.example`) la API responde
+  `429 RATE_LIMITED`. Si muchos usuarios entran desde la misma IP pública (NAT de la oficina) y
+  reciben 429 al iniciar sesión, se sube `RATE_LIMIT_AUTH_PER_MINUTE`. El límite usa la IP de
+  `X-Forwarded-For`, así que el puerto 8080 solo debe ser accesible desde el proxy.
+- En producción: `REQUIRE_HTTPS=true` y, si no se quiere publicar el contrato, `API_DOCS_ENABLED=false`.
 - `JWT_SECRET` se rota cambiándolo en `.env` y reiniciando la API. Todas las sesiones se
   cierran y los usuarios vuelven a iniciar sesión.
 

@@ -20,8 +20,8 @@ ISO/IEC/IEEE 29119-4 y el proceso (planificar → monitorear y controlar → com
 | **Componente (web)** | `@WebMvcTest` + spring-security-test | Validación, códigos HTTP, permisos por rol | Local y CI | 100 % pasan |
 | **Integración** | Testcontainers (PostgreSQL 16) | Flyway, validación del esquema, flujos completos con BD real | CI (se omiten sin Docker) | 100 % pasan |
 | **Sistema (smoke)** | `docker compose` + curl + jq | Los 3 contenedores juntos y el flujo autenticado de extremo a extremo | CI | 100 % de los pasos |
-| **Rendimiento** | k6 | Metas de la característica 2.2 de `modelo-calidad-25010.md` | Fase 6 | p95 ≤ 500 ms |
-| **Seguridad** | Revisión OWASP ASVS L2, Trivy, Dependency-Check | Vulnerabilidades | Fase 6 | 0 críticas o altas |
+| **Rendimiento** | k6 (`ops/k6/simulations.js`, 20 VU × 30 s) | Metas de la característica 2.2 de `modelo-calidad-25010.md` | CI (smoke test) | p95 ≤ 500 ms y < 1 % de errores |
+| **Seguridad** | Revisión OWASP ASVS L2, Trivy, Dependency-Check, pasos de cabeceras, CORS y 429 en el smoke test | Vulnerabilidades y configuración | CI (`security.yml`, Dependency-Check semanal) | 0 críticas corregibles |
 
 ## 4. Técnicas de diseño (29119-4) aplicadas
 
@@ -34,6 +34,7 @@ ISO/IEC/IEEE 29119-4 y el proceso (planificar → monitorear y controlar → com
 | Variación (signo) | positiva · cero · negativa | +2 · 0 · −2 | `test_returns.py` |
 | Bloqueo por intentos | 1–4 fallos · 5.º fallo | 5.º intento bloquea | `fifthFailedAttemptLocksAccount`, `accountLocksAfterFiveFailedAttempts` |
 | Rango de fechas | `from` ≤ `to` · `from` > `to` | mismo día (inclusivo) · día siguiente | `DateRangeTest` |
+| Rate limiting | login por IP · autenticada por usuario · anónima por IP · OPTIONS y fuera de `/api` · desactivado | N-ésima petición ✅ · N+1 ❌ 429 | `RateLimitFilterTest` |
 
 **Brechas detectadas** (a cubrir, Fase Q):
 - Capital exactamente igual a 100.000,00 (límite válido).
@@ -43,12 +44,12 @@ ISO/IEC/IEEE 29119-4 y el proceso (planificar → monitorear y controlar → com
 ### 4.2 Tabla de decisión — autorización por rol
 | Endpoint | Anónimo | INVESTOR | IT_MANAGER | ADMIN | Prueba |
 |---|---|---|---|---|---|
-| `POST /api/simulations` | 401 | 201 | 403 | 201 | `SimulationControllerTest` |
-| `GET /api/simulations` | 401 | 403 | 403 | 200 | `SimulationControllerTest`, `InstallationFlowIT` |
-| `GET /api/simulations/{id}` | 401 | 200 si es suya, 404 si no | 404 | 200 | `SimulationServiceTest` |
-| `GET /api/dashboard/statistics` | 401 | 403 | 403 | 200 | `InstallationFlowIT`, smoke test |
-| `/api/users/**` | 401 | 403 | 403 | 200 | `InstallationFlowIT` (parcial) |
-| `GET /api/audit` | 401 | 403 | 200 | 200 | `InstallationFlowIT` (solo ADMIN) |
+| `POST /api/v1/simulations` | 401 | 201 | 403 | 201 | `SimulationControllerTest` |
+| `GET /api/v1/simulations` | 401 | 403 | 403 | 200 | `SimulationControllerTest`, `InstallationFlowIT` |
+| `GET /api/v1/simulations/{id}` | 401 | 200 si es suya, 404 si no | 404 | 200 | `SimulationServiceTest` |
+| `GET /api/v1/dashboard/statistics` | 401 | 403 | 403 | 200 | `InstallationFlowIT`, smoke test |
+| `/api/v1/users/**` | 401 | 403 | 403 | 200 | `InstallationFlowIT` (parcial) |
+| `GET /api/v1/audit` | 401 | 403 | 200 | 200 | `InstallationFlowIT` (solo ADMIN) |
 
 ### 4.3 Transición de estados — sesión y cuenta
 ```
