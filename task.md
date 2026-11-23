@@ -4,7 +4,7 @@
 > documentación y este archivo, en **español**. Este repositorio es **solo backend**: el
 > frontend vive en otro repositorio y consume el contrato OpenAPI.
 >
-> Documentación relacionada: [Lógica de negocio](docs/logica-negocio.md) · [Arquitectura](docs/arquitectura.md) · [Modelo de datos](docs/modelo-datos.md)
+> Documentación relacionada: [Lógica de negocio](docs/logica-negocio.md) · [Arquitectura](docs/arquitectura.md) · [Modelo de datos](docs/modelo-datos.md) · [Calidad ISO](docs/calidad/README.md)
 >
 > Leyenda: `[x]` hecho · `[ ]` pendiente · **(P)** = prioridad alta dentro de la fase
 
@@ -81,6 +81,30 @@
 > cliente necesita revocación instantánea, se puede verificar el estado del usuario en cada petición
 > (con una consulta extra a la BD).
 
+## Fase Q — Aseguramiento de calidad ISO (transversal a todas las fases)
+
+> Alineación (no certificación) con las normas ISO de calidad. Documentos en [`docs/calidad/`](docs/calidad/README.md).
+
+### Documentación base ✅
+- [x] Marco normativo y ciclo PDCA (ISO 9001 / ISO/IEC/IEEE 90003): `docs/calidad/README.md`
+- [x] Modelo de calidad con las 9 características de **ISO/IEC 25010:2023**, métricas de ISO/IEC 25023, metas y estado, evaluado según ISO/IEC 25040: `modelo-calidad-25010.md`
+- [x] Plan de pruebas **ISO/IEC/IEEE 29119** (niveles, técnicas de 29119-4, criterios, defectos e informe): `plan-pruebas-29119.md`
+- [x] Requisitos RF/RNF y matriz de trazabilidad **ISO/IEC/IEEE 29148**: `matriz-trazabilidad-29148.md`
+- [x] Declaración de aplicabilidad de controles **ISO/IEC 27001:2022 Anexo A** con Ley 1581 de 2012: `controles-27001.md`
+- [x] Mapeo del proceso **ISO/IEC 29110** (gestión del proyecto e implementación del software): `proceso-29110.md`
+- [x] Registro de riesgos **ISO 31000**: `riesgos-31000.md`
+
+### Brechas por cerrar
+- [ ] **(P)** Pruebas de valores límite faltantes (29119-4): capital = 100.000,00 aceptado; contraseña de 7, 8, 72 y 73 caracteres; variación de ±100 en el motor
+- [ ] Prueba concurrente del advisory lock de mercado (RF-07)
+- [ ] Completar la tabla de decisión de roles: IT_MANAGER en `/api/audit` y en `/api/users/**`
+- [ ] **(P)** Protección de la rama `main`: PR obligatorio y los checks de CI requeridos (27001 A.8.4 y A.8.32)
+- [ ] Plantillas de *issue* (defecto con severidad) y de PR (requisito y prueba) en `.github/`
+- [ ] Procedimiento de supresión definitiva de datos personales y aviso de privacidad (Ley 1581, 27001 A.5.34)
+- [ ] Metas de desempeño medidas con k6 (25010 §2.2), junto con la Fase 6
+- [ ] Respaldo y restauración probados (25010 recuperabilidad; 27001 A.8.13), junto con la Fase 5
+- [ ] Actualizar al cierre de cada fase: evaluación 25010 (§3), informe de pruebas (§8), matriz de trazabilidad y registro de riesgos
+
 ## Fase 2 — IA integrada
 
 - [ ] Interfaz `AiAlertGenerator` con implementaciones intercambiables (Claude, Gemini y otras), elegida por `AI_PROVIDER`
@@ -146,3 +170,4 @@
 3. Los endpoints nuevos están documentados en Swagger, con su `code` de error en `logica-negocio.md`.
 4. Los cambios de esquema van en una migración Flyway nueva.
 5. No hay secretos en el repositorio.
+6. Si agrega o cambia un requisito, la [matriz de trazabilidad](docs/calidad/matriz-trazabilidad-29148.md) queda actualizada (ISO/IEC/IEEE 29148) y las pruebas nuevas usan particiones y valores límite (ISO/IEC/IEEE 29119-4).
