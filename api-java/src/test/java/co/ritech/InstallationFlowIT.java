@@ -284,6 +284,7 @@ class InstallationFlowIT {
         postJson("/api/projections", adminToken, "{\"initialCapital\": 1000000, \"horizonDays\": 20}")
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.projection.result.base.finalAmount").value(1010000.00))
+                .andExpect(jsonPath("$.projection.result.probabilityOfLossPct").value(40.0))
                 .andExpect(jsonPath("$.projection.currency").value("COP"))
                 .andExpect(jsonPath("$.disclaimer").exists());
         postJson("/api/projections", adminToken, "{\"initialCapital\": 1000000, \"horizonDays\": 253}")
@@ -333,7 +334,9 @@ class InstallationFlowIT {
 
         mvc.perform(get("/api/news/sentiment").header("Authorization", "Bearer " + adminToken))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.sentiment.label").exists());
+                .andExpect(jsonPath("$.sentiment.label").exists())
+                .andExpect(jsonPath("$.sentiment.meanScore").exists())
+                .andExpect(jsonPath("$.sentiment.mean_score").doesNotExist());
     }
 
     @Test

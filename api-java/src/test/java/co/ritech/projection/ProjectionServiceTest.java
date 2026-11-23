@@ -69,12 +69,31 @@ class ProjectionServiceTest {
     @Test
     void fiveDaysProjectWithTheStoredVariations() {
         when(market.findTop250BySymbolOrderByMarketDateDesc("QQQ")).thenReturn(days(5));
-        var result = mock(ProjectionResult.class);
-        when(calcEngine.calculateProjection(eq(CAPITAL), any(), anyInt())).thenReturn(result);
+        var low = new CalcEngineClient.Scenario(
+                new BigDecimal("950000.00"), new BigDecimal("-50000.00"), new BigDecimal("-5"));
+        var mid =
+                new CalcEngineClient.Scenario(new BigDecimal("1010000.00"), new BigDecimal("10000.00"), BigDecimal.ONE);
+        var high = new CalcEngineClient.Scenario(
+                new BigDecimal("1080000.00"), new BigDecimal("80000.00"), new BigDecimal("8"));
+        when(calcEngine.calculateProjection(eq(CAPITAL), any(), anyInt()))
+                .thenReturn(new ProjectionResult(
+                        20,
+                        10000,
+                        5,
+                        BigDecimal.TWO,
+                        low,
+                        mid,
+                        high,
+                        new BigDecimal("1012000.00"),
+                        new BigDecimal("41.5")));
 
         var projection = service.project(null, CAPITAL, 20);
 
-        assertThat(projection.result()).isSameAs(result);
+        assertThat(projection.result().pessimistic().finalAmount()).isEqualByComparingTo("950000.00");
+        assertThat(projection.result().base().returnPct()).isEqualByComparingTo("1");
+        assertThat(projection.result().optimistic().profit()).isEqualByComparingTo("80000.00");
+        assertThat(projection.result().probabilityOfLossPct()).isEqualByComparingTo("41.5");
+        assertThat(projection.result().sampleSize()).isEqualTo(5);
         assertThat(projection.currency()).isEqualTo("COP");
         assertThat(projection.historyFrom()).isEqualTo(LocalDate.of(2026, 11, 16));
         assertThat(projection.historyTo()).isEqualTo(LocalDate.of(2026, 11, 20));

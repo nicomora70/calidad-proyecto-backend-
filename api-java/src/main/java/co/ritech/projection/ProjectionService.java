@@ -56,7 +56,40 @@ public class ProjectionService {
     }
 
     public record Projection(
-            ProjectionResult result, String currency, String symbol, LocalDate historyFrom, LocalDate historyTo) {}
+            Summary result, String currency, String symbol, LocalDate historyFrom, LocalDate historyTo) {}
+
+    /** API view (camelCase) of the calc-engine result, which uses snake_case on the internal wire. */
+    public record Summary(
+            int horizonDays,
+            int simulations,
+            int sampleSize,
+            BigDecimal leverage,
+            Scenario pessimistic,
+            Scenario base,
+            Scenario optimistic,
+            BigDecimal expectedFinalAmount,
+            BigDecimal probabilityOfLossPct) {
+
+        static Summary from(ProjectionResult r) {
+            return new Summary(
+                    r.horizonDays(),
+                    r.simulations(),
+                    r.sampleSize(),
+                    r.leverage(),
+                    Scenario.from(r.pessimistic()),
+                    Scenario.from(r.base()),
+                    Scenario.from(r.optimistic()),
+                    r.expectedFinalAmount(),
+                    r.probabilityOfLossPct());
+        }
+    }
+
+    public record Scenario(BigDecimal finalAmount, BigDecimal profit, BigDecimal returnPct) {
+
+        static Scenario from(CalcEngineClient.Scenario s) {
+            return new Scenario(s.finalAmount(), s.profit(), s.returnPct());
+        }
+    }
 
     @Transactional
     public Projection project(UUID userId, BigDecimal initialCapital, int horizonDays) {
@@ -82,7 +115,7 @@ public class ProjectionService {
                         + history.size());
         var dates = history.stream().map(MarketVariation::getMarketDate).toList();
         return new Projection(
-                result,
+                Summary.from(result),
                 rules.currency(),
                 symbol,
                 dates.stream().min(Comparator.naturalOrder()).orElseThrow(),

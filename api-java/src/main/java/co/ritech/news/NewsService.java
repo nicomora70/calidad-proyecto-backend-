@@ -1,5 +1,6 @@
 package co.ritech.news;
 
+import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.LocalDate;
 import java.util.List;
@@ -33,7 +34,17 @@ public class NewsService {
         this.clock = clock;
     }
 
-    public record DailySentiment(LocalDate date, SentimentResult sentiment) {}
+    public record DailySentiment(LocalDate date, Sentiment sentiment) {}
+
+    /** API view (camelCase) of the calc-engine result. */
+    public record Sentiment(
+            int count, BigDecimal meanScore, String label, int bullishCount, int neutralCount, int bearishCount) {
+
+        static Sentiment from(SentimentResult r) {
+            return new Sentiment(
+                    r.count(), r.meanScore(), r.label(), r.bullishCount(), r.neutralCount(), r.bearishCount());
+        }
+    }
 
     @Transactional(readOnly = true)
     public Page<NewsArticle> search(LocalDate from, LocalDate to, String sentimentLabel, Pageable pageable) {
@@ -52,7 +63,7 @@ public class NewsService {
         LocalDate day = date != null ? date : LocalDate.now(clock.withZone(properties.timezone()));
         var range = DateRange.of(day, day, properties.timezone());
         var scores = repository.sentimentScoresBetween(range.from(), range.to());
-        return new DailySentiment(day, calcEngine.calculateSentiment(scores));
+        return new DailySentiment(day, Sentiment.from(calcEngine.calculateSentiment(scores)));
     }
 
     /** Latest headlines inside the configured window, as "title (label)", for the AI prompt. */

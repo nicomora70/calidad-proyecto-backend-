@@ -53,7 +53,8 @@ class NewsServiceTest {
         var daily = service.dailySentiment(null);
 
         assertThat(daily.date()).isEqualTo(LocalDate.of(2026, 11, 20));
-        assertThat(daily.sentiment()).isEqualTo(expected);
+        assertThat(daily.sentiment())
+                .isEqualTo(new NewsService.Sentiment(1, new BigDecimal("0.4"), "Bullish", 1, 0, 0));
     }
 
     @Test
