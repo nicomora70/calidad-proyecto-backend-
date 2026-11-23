@@ -141,6 +141,16 @@ class InstallationFlowIT {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("INSUFFICIENT_CAPITAL"));
 
+        // AI alert (template provider) is generated asynchronously after the commit
+        assertThat(awaitAlertStatus(simulationId, investorToken)).isEqualTo(200);
+        mvc.perform(get("/api/simulations/" + simulationId + "/alert")
+                        .header("Authorization", "Bearer " + investorToken))
+                .andExpect(jsonPath("$.status").value("DONE"))
+                .andExpect(jsonPath("$.title").value("El NASDAQ 100 subió 1,50 % y tu simulación ganó 3,00 %"));
+        mvc.perform(get("/api/me/alerts").header("Authorization", "Bearer " + investorToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.page.totalElements").value(1));
+
         // History: own list, own detail; investor cannot see the global list or the dashboard
         mvc.perform(get("/api/me/simulations").header("Authorization", "Bearer " + investorToken))
                 .andExpect(status().isOk())
@@ -173,6 +183,23 @@ class InstallationFlowIT {
         login("ana@cliente.co", "ana-segura-2026").andExpect(status().isUnauthorized());
         mvc.perform(get("/api/simulations/" + simulationId).header("Authorization", "Bearer " + adminToken))
                 .andExpect(status().isOk());
+    }
+
+    /** Polls the alert endpoint while it answers 202 (PENDING), up to 5 s. */
+    private int awaitAlertStatus(String simulationId, String token) throws Exception {
+        int status = 0;
+        for (int i = 0; i < 50; i++) {
+            status = mvc.perform(get("/api/simulations/" + simulationId + "/alert")
+                            .header("Authorization", "Bearer " + token))
+                    .andReturn()
+                    .getResponse()
+                    .getStatus();
+            if (status != 202) {
+                return status;
+            }
+            Thread.sleep(100);
+        }
+        return status;
     }
 
     @Test

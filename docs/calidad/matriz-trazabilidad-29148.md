@@ -28,7 +28,7 @@ Prioridad: **M** = obligatorio (*must*) · **S** = deseable (*should*). Estado: 
 | RF-17 | Correo único sin distinguir mayúsculas | M | §4 | `User.normalizeEmail`, índice `ux_users_email_active` | `duplicateEmailIsRejected`, `InstallationFlowIT` | ✅ |
 | RF-18 | El primer ADMIN se crea desde variables de entorno | M | §4 | `BootstrapAdminInitializer` | `InstallationFlowIT` (indirecta), smoke test | ✅ |
 | RF-19 | Registro de auditoría consultable por ADMIN e IT_MANAGER | M | CU-09 | `AuditService`, `AuditController` | `AuditServiceTest`, `InstallationFlowIT` | ✅ |
-| RF-20 | Alertas con IA a partir de noticias | S | CU-05 | Fase 2 | — | ⬜ |
+| RF-20 | Alertas con IA por simulación, asíncronas y con límite de gasto | S | CU-05 | `AiAlertService`, `AiAlertController`, `TemplateAiAlertGenerator`, `GeminiAiAlertGenerator` | `AiAlertServiceTest`, `AlertGeneratorsTest`, `AiAlertControllerTest`, `InstallationFlowIT` | ✅ (las noticias, en la Fase 3) |
 | RF-21 | Ingesta programada de noticias | S | CU-06 | Fase 3 | — | ⬜ |
 | RF-22 | Notificaciones en la app y por correo | S | CU-07 | Fase 4 | — | ⬜ |
 | RF-23 | Licencia firmada con modo solo lectura al vencer | M | CU-08 | Fase 5 | — | ⬜ |

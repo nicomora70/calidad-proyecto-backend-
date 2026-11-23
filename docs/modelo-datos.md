@@ -57,11 +57,16 @@ market_variations   (caché de la variación diaria por símbolo y fecha)
 `actor_id`, `action` (p. ej. `SIMULATION_CREATED`), `entity_type`, `entity_id`, `details TEXT`,
 `ip_address` y `user_agent` (V2), `created_at`.
 
+### ai_alerts (V3)
+Una por simulación (`simulation_id` único), con `user_id` para listar las propias.
+`status` (`PENDING`, `DONE`, `FAILED`), `title`, `content`, `model`, `prompt_version`,
+`prompt_tokens`, `completion_tokens`, `cost_usd NUMERIC(10,6)`, `failure_reason`,
+`created_at` y `completed_at`. El índice `(status, created_at)` sirve para sumar el gasto del mes.
+
 ## Tablas planeadas
 
 | Migración | Tabla | Propósito |
 |---|---|---|
-| V3 (Fase 2) | `ai_alerts` | simulation_id, title, content, model, prompt_tokens, completion_tokens, cost_usd, status |
 | V4 (Fase 3) | `news_articles` | url (única), title, summary, source, published_at, sentiment_score, sentiment_label |
 | V5 (Fase 4) | `notifications` | user_id, type, channel, title, body, read_at, sent_at, status |
 | V5 (Fase 4) | `notification_preferences` | user_id, email_enabled, in_app_enabled, variation_threshold_pct |

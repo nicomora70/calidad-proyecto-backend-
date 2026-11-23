@@ -12,6 +12,7 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import co.ritech.ai.AiAlertService;
 import co.ritech.audit.AuditService;
 import co.ritech.common.DateRange;
 import co.ritech.config.RitechProperties;
@@ -25,7 +26,8 @@ import co.ritech.security.CurrentUser;
  * 1. validate minimum capital (business rule, Java),
  * 2. obtain the current NASDAQ 100 variation (cached),
  * 3. delegate the math to the Python calc-engine,
- * 4. persist the immutable result and audit it.
+ * 4. persist the immutable result and audit it,
+ * 5. request the AI alert (generated after the commit, best-effort).
  */
 @Service
 public class SimulationService {
@@ -35,6 +37,7 @@ public class SimulationService {
     private final CalcEngineClient calcEngine;
     private final SimulationRepository repository;
     private final AuditService auditService;
+    private final AiAlertService aiAlerts;
     private final Clock clock;
 
     public SimulationService(
@@ -43,12 +46,14 @@ public class SimulationService {
             CalcEngineClient calcEngine,
             SimulationRepository repository,
             AuditService auditService,
+            AiAlertService aiAlerts,
             Clock clock) {
         this.properties = properties;
         this.marketVariationService = marketVariationService;
         this.calcEngine = calcEngine;
         this.repository = repository;
         this.auditService = auditService;
+        this.aiAlerts = aiAlerts;
         this.clock = clock;
     }
 
@@ -82,6 +87,7 @@ public class SimulationService {
                 "SIMULATION",
                 simulation.getId(),
                 "capital=" + initialCapital.toPlainString() + " return_pct=" + result.returnPct());
+        aiAlerts.requestFor(simulation);
         return simulation;
     }
 
