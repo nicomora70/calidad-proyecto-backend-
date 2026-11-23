@@ -17,7 +17,7 @@ jobs:
     env:
       JWT_SECRET: release-only-secret-release-only-secret-0
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - run: docker compose up -d --build --wait --wait-timeout 300
       - run: curl -fsS http://localhost:8080/v3/api-docs.yaml -o openapi.yaml
       - name: Attach to the GitHub Release
@@ -40,7 +40,7 @@ jobs:
           - name: ritech-calc-engine
             context: ./calc-engine
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: docker/login-action@v3
         with:
           registry: ghcr.io
