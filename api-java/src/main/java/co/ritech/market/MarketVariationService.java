@@ -25,8 +25,12 @@ public class MarketVariationService {
     private final RitechProperties properties;
     private final Clock clock;
 
-    public MarketVariationService(MarketDataProvider provider, MarketVariationRepository repository,
-                                  MarketFetchLock lock, RitechProperties properties, Clock clock) {
+    public MarketVariationService(
+            MarketDataProvider provider,
+            MarketVariationRepository repository,
+            MarketFetchLock lock,
+            RitechProperties properties,
+            Clock clock) {
         this.provider = provider;
         this.repository = repository;
         this.lock = lock;
@@ -51,7 +55,8 @@ public class MarketVariationService {
 
         Instant now = clock.instant();
         MarketQuote quote = provider.fetchLatestQuote(symbol);
-        return repository.findBySymbolAndMarketDate(symbol, quote.marketDate())
+        return repository
+                .findBySymbolAndMarketDate(symbol, quote.marketDate())
                 .map(existing -> {
                     existing.refresh(quote, now);
                     return existing;
@@ -62,7 +67,8 @@ public class MarketVariationService {
     private Optional<MarketVariation> freshCached(String symbol) {
         Duration ttl = properties.market().cacheTtl();
         Instant now = clock.instant();
-        return repository.findFirstBySymbolOrderByFetchedAtDesc(symbol)
+        return repository
+                .findFirstBySymbolOrderByFetchedAtDesc(symbol)
                 .filter(v -> v.getFetchedAt().plus(ttl).isAfter(now));
     }
 }

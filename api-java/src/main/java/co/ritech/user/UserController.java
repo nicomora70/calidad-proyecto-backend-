@@ -46,8 +46,8 @@ public class UserController {
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     @Operation(summary = "Create a user with a temporary password (must be changed on first login)")
-    public UserResponse create(@Parameter(hidden = true) CurrentUser actor,
-                               @Valid @RequestBody CreateUserRequest request) {
+    public UserResponse create(
+            @Parameter(hidden = true) CurrentUser actor, @Valid @RequestBody CreateUserRequest request) {
         return UserResponse.from(service.create(actor, request));
     }
 
@@ -67,14 +67,18 @@ public class UserController {
 
     @PatchMapping("/{id}")
     @Operation(summary = "Rename and/or activate/deactivate a user")
-    public UserResponse update(@Parameter(hidden = true) CurrentUser actor, @PathVariable UUID id,
-                               @Valid @RequestBody UpdateUserRequest request) {
+    public UserResponse update(
+            @Parameter(hidden = true) CurrentUser actor,
+            @PathVariable UUID id,
+            @Valid @RequestBody UpdateUserRequest request) {
         return UserResponse.from(service.update(actor, id, request));
     }
 
     @PatchMapping("/{id}/role")
-    public UserResponse changeRole(@Parameter(hidden = true) CurrentUser actor, @PathVariable UUID id,
-                                   @Valid @RequestBody ChangeRoleRequest request) {
+    public UserResponse changeRole(
+            @Parameter(hidden = true) CurrentUser actor,
+            @PathVariable UUID id,
+            @Valid @RequestBody ChangeRoleRequest request) {
         return UserResponse.from(service.changeRole(actor, id, request.role()));
     }
 

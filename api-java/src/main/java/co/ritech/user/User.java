@@ -56,11 +56,10 @@ public class User {
     @Column(name = "deleted_at")
     private Instant deletedAt;
 
-    protected User() {
-    }
+    protected User() {}
 
-    public User(String fullName, String email, Role role, String passwordHash,
-                boolean mustChangePassword, Instant now) {
+    public User(
+            String fullName, String email, Role role, String passwordHash, boolean mustChangePassword, Instant now) {
         this.id = UUID.randomUUID();
         this.fullName = fullName.trim();
         this.email = normalizeEmail(email);
@@ -130,17 +129,55 @@ public class User {
         updatedAt = now;
     }
 
-    public UUID getId() { return id; }
-    public String getFullName() { return fullName; }
-    public String getEmail() { return email; }
-    public Role getRole() { return role; }
-    public String getPasswordHash() { return passwordHash; }
-    public boolean isActive() { return active; }
-    public int getFailedAttempts() { return failedAttempts; }
-    public Instant getLockedUntil() { return lockedUntil; }
-    public boolean isMustChangePassword() { return mustChangePassword; }
-    public Instant getLastLoginAt() { return lastLoginAt; }
-    public Instant getCreatedAt() { return createdAt; }
-    public Instant getUpdatedAt() { return updatedAt; }
-    public Instant getDeletedAt() { return deletedAt; }
+    public UUID getId() {
+        return id;
+    }
+
+    public String getFullName() {
+        return fullName;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public Role getRole() {
+        return role;
+    }
+
+    public String getPasswordHash() {
+        return passwordHash;
+    }
+
+    public boolean isActive() {
+        return active;
+    }
+
+    public int getFailedAttempts() {
+        return failedAttempts;
+    }
+
+    public Instant getLockedUntil() {
+        return lockedUntil;
+    }
+
+    public boolean isMustChangePassword() {
+        return mustChangePassword;
+    }
+
+    public Instant getLastLoginAt() {
+        return lastLoginAt;
+    }
+
+    public Instant getCreatedAt() {
+        return createdAt;
+    }
+
+    public Instant getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public Instant getDeletedAt() {
+        return deletedAt;
+    }
 }

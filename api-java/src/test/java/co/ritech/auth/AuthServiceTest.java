@@ -1,14 +1,5 @@
 package co.ritech.auth;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
@@ -31,6 +22,15 @@ import co.ritech.user.Role;
 import co.ritech.user.User;
 import co.ritech.user.UserRepository;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
 class AuthServiceTest {
 
     private final Instant now = Instant.parse("2026-11-20T15:00:00Z");
@@ -49,11 +49,10 @@ class AuthServiceTest {
         JwtService jwt = mock(JwtService.class);
         when(jwt.issueAccessToken(any())).thenReturn("access-token");
         when(tokens.save(any(RefreshToken.class))).thenAnswer(inv -> inv.getArgument(0));
-        service = new AuthService(users, tokens, encoder, jwt, audit, TestFixtures.properties(),
-                Clock.fixed(now, ZoneOffset.UTC));
+        service = new AuthService(
+                users, tokens, encoder, jwt, audit, TestFixtures.properties(), Clock.fixed(now, ZoneOffset.UTC));
 
-        user = new User("Ana", "Ana@Example.com", Role.INVESTOR, encoder.encode("correct-password"),
-                false, now);
+        user = new User("Ana", "Ana@Example.com", Role.INVESTOR, encoder.encode("correct-password"), false, now);
         when(users.findByEmailAndDeletedAtIsNull("ana@example.com")).thenReturn(Optional.of(user));
         when(users.findByIdAndDeletedAtIsNull(user.getId())).thenReturn(Optional.of(user));
     }
@@ -145,8 +144,8 @@ class AuthServiceTest {
         var temp = new User("Bob", "bob@example.com", Role.INVESTOR, encoder.encode("temporary-1"), true, now);
         when(users.findByIdAndDeletedAtIsNull(temp.getId())).thenReturn(Optional.of(temp));
 
-        service.changePassword(new CurrentUser(temp.getId(), temp.getEmail(), Role.INVESTOR, true),
-                "temporary-1", "brand-new-pass");
+        service.changePassword(
+                new CurrentUser(temp.getId(), temp.getEmail(), Role.INVESTOR, true), "temporary-1", "brand-new-pass");
 
         assertThat(temp.isMustChangePassword()).isFalse();
         assertThat(encoder.matches("brand-new-pass", temp.getPasswordHash())).isTrue();

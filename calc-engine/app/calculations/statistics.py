@@ -1,8 +1,8 @@
 """Aggregate statistics over a set of simulations (dashboard figures)."""
 
+import statistics as pystats
 from dataclasses import dataclass
 from decimal import ROUND_HALF_EVEN, Decimal
-import statistics as pystats
 
 from app.calculations.returns import CENT, HUNDRED, PERCENT_PRECISION, ZERO
 
@@ -52,10 +52,15 @@ def max_drawdown_pct(returns_pct: list[Decimal]) -> Decimal:
 def calculate_statistics(samples: list[SimulationSample]) -> StatisticsResult:
     if not samples:
         return StatisticsResult(
-            count=0, total_capital=_money(ZERO), total_profit=_money(ZERO),
-            mean_return_pct=_pct(ZERO), weighted_return_pct=_pct(ZERO),
-            stdev_return_pct=_pct(ZERO), best_return_pct=_pct(ZERO),
-            worst_return_pct=_pct(ZERO), max_drawdown_pct=_pct(ZERO),
+            count=0,
+            total_capital=_money(ZERO),
+            total_profit=_money(ZERO),
+            mean_return_pct=_pct(ZERO),
+            weighted_return_pct=_pct(ZERO),
+            stdev_return_pct=_pct(ZERO),
+            best_return_pct=_pct(ZERO),
+            worst_return_pct=_pct(ZERO),
+            max_drawdown_pct=_pct(ZERO),
             win_rate_pct=_pct(ZERO),
         )
 

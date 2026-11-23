@@ -7,6 +7,7 @@ from fastapi import FastAPI
 
 from app.calculations.returns import calculate_return
 from app.calculations.statistics import SimulationSample, calculate_statistics
+from app.logging_config import RequestIdMiddleware, configure_logging
 from app.schemas import (
     ReturnRequest,
     ReturnResponse,
@@ -14,7 +15,8 @@ from app.schemas import (
     StatisticsResponse,
 )
 
-app = FastAPI(title="RiTech calc-engine", version="0.1.0")
+app = FastAPI(title="RiTech calc-engine", version="0.2.0")
+app.add_middleware(RequestIdMiddleware, logger=configure_logging())
 
 
 @app.get("/health")

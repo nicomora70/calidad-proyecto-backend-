@@ -40,11 +40,17 @@ public class AuditLog {
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
-    protected AuditLog() {
-    }
+    protected AuditLog() {}
 
-    public AuditLog(UUID actorId, String action, String entityType, UUID entityId,
-                    String details, String ipAddress, String userAgent, Instant createdAt) {
+    public AuditLog(
+            UUID actorId,
+            String action,
+            String entityType,
+            UUID entityId,
+            String details,
+            String ipAddress,
+            String userAgent,
+            Instant createdAt) {
         this.id = UUID.randomUUID();
         this.actorId = actorId;
         this.action = action;
@@ -56,13 +62,39 @@ public class AuditLog {
         this.createdAt = createdAt;
     }
 
-    public UUID getId() { return id; }
-    public UUID getActorId() { return actorId; }
-    public String getAction() { return action; }
-    public String getEntityType() { return entityType; }
-    public UUID getEntityId() { return entityId; }
-    public String getDetails() { return details; }
-    public String getIpAddress() { return ipAddress; }
-    public String getUserAgent() { return userAgent; }
-    public Instant getCreatedAt() { return createdAt; }
+    public UUID getId() {
+        return id;
+    }
+
+    public UUID getActorId() {
+        return actorId;
+    }
+
+    public String getAction() {
+        return action;
+    }
+
+    public String getEntityType() {
+        return entityType;
+    }
+
+    public UUID getEntityId() {
+        return entityId;
+    }
+
+    public String getDetails() {
+        return details;
+    }
+
+    public String getIpAddress() {
+        return ipAddress;
+    }
+
+    public String getUserAgent() {
+        return userAgent;
+    }
+
+    public Instant getCreatedAt() {
+        return createdAt;
+    }
 }

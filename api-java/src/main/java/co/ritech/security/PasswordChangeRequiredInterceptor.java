@@ -18,8 +18,8 @@ import jakarta.servlet.http.HttpServletResponse;
  */
 public class PasswordChangeRequiredInterceptor implements HandlerInterceptor {
 
-    private static final Set<String> ALLOWED = Set.of(
-            "/api/auth/change-password", "/api/auth/logout", "/api/auth/refresh", "/api/me");
+    private static final Set<String> ALLOWED =
+            Set.of("/api/auth/change-password", "/api/auth/logout", "/api/auth/refresh", "/api/me");
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
@@ -34,7 +34,9 @@ public class PasswordChangeRequiredInterceptor implements HandlerInterceptor {
 
     public static class PasswordChangeRequiredException extends BusinessException {
         public PasswordChangeRequiredException() {
-            super(HttpStatus.FORBIDDEN, "PASSWORD_CHANGE_REQUIRED",
+            super(
+                    HttpStatus.FORBIDDEN,
+                    "PASSWORD_CHANGE_REQUIRED",
                     "You must change your temporary password before continuing");
         }
     }

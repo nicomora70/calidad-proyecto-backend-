@@ -2,7 +2,6 @@ package co.ritech.security;
 
 import java.nio.charset.StandardCharsets;
 import java.util.List;
-
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 
@@ -40,29 +39,35 @@ import co.ritech.config.RitechProperties;
 public class SecurityConfig {
 
     private static final String[] PUBLIC_ENDPOINTS = {
-            "/api/health", "/api/auth/login", "/api/auth/refresh", "/api/auth/logout",
-            "/actuator/health", "/actuator/health/**",
-            "/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs", "/v3/api-docs/**"
+        "/api/health",
+        "/api/auth/login",
+        "/api/auth/refresh",
+        "/api/auth/logout",
+        "/actuator/health",
+        "/actuator/health/**",
+        "/swagger-ui.html",
+        "/swagger-ui/**",
+        "/v3/api-docs",
+        "/v3/api-docs/**"
     };
 
     @Bean
-    SecurityFilterChain securityFilterChain(HttpSecurity http, ObjectMapper mapper,
-                                            JwtAuthenticationConverter converter) throws Exception {
-        http
-                .csrf(csrf -> csrf.disable()) // stateless API, bearer tokens only (no cookies)
-                .cors(cors -> { })
+    SecurityFilterChain securityFilterChain(
+            HttpSecurity http, ObjectMapper mapper, JwtAuthenticationConverter converter) throws Exception {
+        http.csrf(csrf -> csrf.disable()) // stateless API, bearer tokens only (no cookies)
+                .cors(cors -> {})
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                        .requestMatchers(PUBLIC_ENDPOINTS).permitAll()
-                        .anyRequest().authenticated())
-                .oauth2ResourceServer(oauth -> oauth
-                        .bearerTokenResolver(publicEndpointsIgnoreToken())
+                .authorizeHttpRequests(auth -> auth.requestMatchers(HttpMethod.OPTIONS, "/**")
+                        .permitAll()
+                        .requestMatchers(PUBLIC_ENDPOINTS)
+                        .permitAll()
+                        .anyRequest()
+                        .authenticated())
+                .oauth2ResourceServer(oauth -> oauth.bearerTokenResolver(publicEndpointsIgnoreToken())
                         .jwt(jwt -> jwt.jwtAuthenticationConverter(converter))
                         .authenticationEntryPoint(ProblemResponses.entryPoint(mapper))
                         .accessDeniedHandler(ProblemResponses.accessDenied(mapper)))
-                .exceptionHandling(ex -> ex
-                        .authenticationEntryPoint(ProblemResponses.entryPoint(mapper))
+                .exceptionHandling(ex -> ex.authenticationEntryPoint(ProblemResponses.entryPoint(mapper))
                         .accessDeniedHandler(ProblemResponses.accessDenied(mapper)));
         return http.build();
     }
@@ -97,7 +102,7 @@ public class SecurityConfig {
     }
 
     @Bean
-    SecretKey jwtSigningKey(RitechProperties properties) {
+    public SecretKey jwtSigningKey(RitechProperties properties) {
         String secret = properties.security().jwtSecret();
         if (secret == null || secret.getBytes(StandardCharsets.UTF_8).length < 32) {
             throw new IllegalStateException(
@@ -107,14 +112,17 @@ public class SecurityConfig {
     }
 
     @Bean
-    JwtEncoder jwtEncoder(SecretKey key) {
+    public JwtEncoder jwtEncoder(SecretKey key) {
         return new NimbusJwtEncoder(new ImmutableSecret<>(key));
     }
 
     @Bean
-    JwtDecoder jwtDecoder(SecretKey key, RitechProperties properties) {
-        NimbusJwtDecoder decoder = NimbusJwtDecoder.withSecretKey(key).macAlgorithm(MacAlgorithm.HS256).build();
-        decoder.setJwtValidator(JwtValidators.createDefaultWithIssuer(properties.security().jwtIssuer()));
+    public JwtDecoder jwtDecoder(SecretKey key, RitechProperties properties) {
+        NimbusJwtDecoder decoder = NimbusJwtDecoder.withSecretKey(key)
+                .macAlgorithm(MacAlgorithm.HS256)
+                .build();
+        decoder.setJwtValidator(
+                JwtValidators.createDefaultWithIssuer(properties.security().jwtIssuer()));
         return decoder;
     }
 

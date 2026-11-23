@@ -33,8 +33,7 @@ public class MarketVariation {
     @Column(name = "fetched_at", nullable = false)
     private Instant fetchedAt;
 
-    protected MarketVariation() {
-    }
+    protected MarketVariation() {}
 
     public MarketVariation(MarketQuote quote, Instant fetchedAt) {
         this.id = UUID.randomUUID();
@@ -51,10 +50,27 @@ public class MarketVariation {
         this.fetchedAt = fetchedAt;
     }
 
-    public UUID getId() { return id; }
-    public String getSymbol() { return symbol; }
-    public LocalDate getMarketDate() { return marketDate; }
-    public BigDecimal getChangePct() { return changePct; }
-    public String getSource() { return source; }
-    public Instant getFetchedAt() { return fetchedAt; }
+    public UUID getId() {
+        return id;
+    }
+
+    public String getSymbol() {
+        return symbol;
+    }
+
+    public LocalDate getMarketDate() {
+        return marketDate;
+    }
+
+    public BigDecimal getChangePct() {
+        return changePct;
+    }
+
+    public String getSource() {
+        return source;
+    }
+
+    public Instant getFetchedAt() {
+        return fetchedAt;
+    }
 }

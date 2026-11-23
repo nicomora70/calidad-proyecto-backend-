@@ -9,19 +9,18 @@ import jakarta.validation.constraints.Size;
 
 public final class AuthDtos {
 
-    private AuthDtos() {
-    }
+    private AuthDtos() {}
 
-    public record LoginRequest(@NotBlank String email, @NotBlank String password) {
-    }
+    public record LoginRequest(
+            @NotBlank String email, @NotBlank String password) {}
 
-    public record RefreshRequest(@NotBlank String refreshToken) {
-    }
+    public record RefreshRequest(@NotBlank String refreshToken) {}
 
     public record ChangePasswordRequest(
             @NotBlank String currentPassword,
-            @NotBlank @Size(min = UserDtos.PASSWORD_MIN, max = UserDtos.PASSWORD_MAX) String newPassword) {
-    }
+
+            @NotBlank @Size(min = UserDtos.PASSWORD_MIN, max = UserDtos.PASSWORD_MAX)
+            String newPassword) {}
 
     public record TokenResponse(
             String accessToken,
@@ -29,6 +28,5 @@ public final class AuthDtos {
             long expiresIn,
             String refreshToken,
             Instant refreshTokenExpiresAt,
-            UserResponse user) {
-    }
+            UserResponse user) {}
 }

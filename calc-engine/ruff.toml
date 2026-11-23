@@ -1,0 +1,9 @@
+target-version = "py312"
+line-length = 100
+
+[lint]
+# pycodestyle, pyflakes, isort, bugbear, pyupgrade, simplify, naming
+select = ["E", "W", "F", "I", "B", "UP", "SIM", "N"]
+
+[format]
+quote-style = "double"

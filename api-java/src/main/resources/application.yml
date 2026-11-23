@@ -20,6 +20,13 @@ server:
   # Trust X-Forwarded-* from the reverse proxy (client IP in the audit log)
   forward-headers-strategy: framework
 
+logging:
+  # Plain-text logs (local development) also show the trace id.
+  # In Docker, LOGGING_STRUCTURED_FORMAT_CONSOLE=ecs switches to JSON (ECS) logs,
+  # which include the "traceId" MDC field automatically.
+  pattern:
+    level: "%5p [%X{traceId:-}]"
+
 management:
   endpoints:
     web:

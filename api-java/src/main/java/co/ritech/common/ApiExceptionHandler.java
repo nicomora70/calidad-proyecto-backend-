@@ -37,13 +37,9 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 
     @Override
     protected ResponseEntity<Object> handleMethodArgumentNotValid(
-            MethodArgumentNotValidException ex, HttpHeaders headers, HttpStatusCode status,
-            WebRequest request) {
+            MethodArgumentNotValidException ex, HttpHeaders headers, HttpStatusCode status, WebRequest request) {
         Map<String, String> errors = ex.getBindingResult().getFieldErrors().stream()
-                .collect(Collectors.toMap(
-                        e -> e.getField(),
-                        e -> String.valueOf(e.getDefaultMessage()),
-                        (a, b) -> a));
+                .collect(Collectors.toMap(e -> e.getField(), e -> String.valueOf(e.getDefaultMessage()), (a, b) -> a));
         ProblemDetail body = problem(HttpStatus.BAD_REQUEST, "VALIDATION_ERROR", "Invalid request");
         body.setProperty("errors", errors);
         return ResponseEntity.badRequest().body(body);
@@ -52,21 +48,23 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
     /** Spring MVC errors (bad UUID, malformed JSON, 405...) also get a "code". */
     @Override
     protected ResponseEntity<Object> handleExceptionInternal(
-            Exception ex, @Nullable Object body, HttpHeaders headers, HttpStatusCode status,
-            WebRequest request) {
+            Exception ex, @Nullable Object body, HttpHeaders headers, HttpStatusCode status, WebRequest request) {
         if (body instanceof ProblemDetail problem
                 && (problem.getProperties() == null || !problem.getProperties().containsKey("code"))) {
             String code = status.value() == 400 ? "BAD_REQUEST" : "HTTP_" + status.value();
             problem.setType(URI.create("urn:ritech:error:" + code));
             problem.setProperty("code", code);
+            problem.setProperty("traceId", RequestIdFilter.current());
         }
         return super.handleExceptionInternal(ex, body, headers, status, request);
     }
 
-    private static ProblemDetail problem(HttpStatusCode status, String code, String detail) {
+    /** Builds the standard error body; "traceId" lets support find the request in the logs. */
+    public static ProblemDetail problem(HttpStatusCode status, String code, String detail) {
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(status, detail);
         problem.setType(URI.create("urn:ritech:error:" + code));
         problem.setProperty("code", code);
+        problem.setProperty("traceId", RequestIdFilter.current());
         return problem;
     }
 }

@@ -18,8 +18,11 @@ public class CurrentUserArgumentResolver implements HandlerMethodArgumentResolve
     }
 
     @Override
-    public CurrentUser resolveArgument(MethodParameter parameter, ModelAndViewContainer mavContainer,
-                                       NativeWebRequest webRequest, WebDataBinderFactory binderFactory) {
+    public CurrentUser resolveArgument(
+            MethodParameter parameter,
+            ModelAndViewContainer mavContainer,
+            NativeWebRequest webRequest,
+            WebDataBinderFactory binderFactory) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth instanceof JwtAuthenticationToken token) {
             return CurrentUser.from(token.getToken());
