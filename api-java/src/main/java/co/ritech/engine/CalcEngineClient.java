@@ -1,8 +1,11 @@
 package co.ritech.engine;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
@@ -22,6 +25,8 @@ import co.ritech.config.RitechProperties;
  */
 @Component
 public class CalcEngineClient {
+
+    private static final Logger log = LoggerFactory.getLogger(CalcEngineClient.class);
 
     private final RestClient restClient;
     private final ResilientCall resilience;
@@ -44,11 +49,86 @@ public class CalcEngineClient {
     }
 
     public ReturnResult calculateReturn(BigDecimal initialCapital, BigDecimal marketVariationPct) {
-        return post("/calculations/returns", new ReturnRequest(initialCapital, marketVariationPct), ReturnResult.class);
+        try {
+            return post("/calculations/returns", new ReturnRequest(initialCapital, marketVariationPct), ReturnResult.class);
+        } catch (CalcEngineUnavailableException ex) {
+            log.warn("Calc-engine unavailable, using local fallback for returns: {}", ex.getMessage());
+            return localReturn(initialCapital, marketVariationPct);
+        }
     }
 
     public StatisticsResult calculateStatistics(List<Sample> samples) {
-        return post("/calculations/statistics", new StatisticsRequest(samples), StatisticsResult.class);
+        try {
+            return post("/calculations/statistics", new StatisticsRequest(samples), StatisticsResult.class);
+        } catch (CalcEngineUnavailableException ex) {
+            log.warn("Calc-engine unavailable, using local fallback for statistics: {}", ex.getMessage());
+            return localStatistics(samples);
+        }
+    }
+
+    private static final BigDecimal LEVERAGE = BigDecimal.valueOf(2);
+    private static final BigDecimal HUNDRED = BigDecimal.valueOf(100);
+
+    /** Fallback: same x2 leverage rule as the calc-engine, loss capped at the capital. */
+    static ReturnResult localReturn(BigDecimal capital, BigDecimal variationPct) {
+        BigDecimal returnPct = variationPct.multiply(LEVERAGE).setScale(4, RoundingMode.HALF_EVEN);
+        BigDecimal raw = capital.add(capital.multiply(returnPct).divide(HUNDRED, 10, RoundingMode.HALF_EVEN));
+        boolean capped = raw.signum() < 0;
+        BigDecimal finalAmount = (capped ? BigDecimal.ZERO : raw).setScale(2, RoundingMode.HALF_EVEN);
+        BigDecimal profit = finalAmount.subtract(capital).setScale(2, RoundingMode.HALF_EVEN);
+        return new ReturnResult(capital, variationPct, LEVERAGE, returnPct, finalAmount, profit, capped);
+    }
+
+    static StatisticsResult localStatistics(List<Sample> samples) {
+        BigDecimal zero4 = BigDecimal.ZERO.setScale(4);
+        if (samples == null || samples.isEmpty()) {
+            return new StatisticsResult(0, BigDecimal.ZERO.setScale(2), BigDecimal.ZERO.setScale(2),
+                    zero4, zero4, zero4, zero4, zero4, zero4, zero4);
+        }
+        int n = samples.size();
+        BigDecimal totalCapital = BigDecimal.ZERO;
+        BigDecimal totalProfit = BigDecimal.ZERO;
+        BigDecimal sum = BigDecimal.ZERO;
+        BigDecimal best = null;
+        BigDecimal worst = null;
+        int wins = 0;
+        double equity = 1;
+        double peak = 1;
+        double maxDrawdown = 0;
+        for (Sample s : samples) {
+            BigDecimal r = s.returnPct();
+            totalCapital = totalCapital.add(s.initialCapital());
+            totalProfit = totalProfit.add(s.initialCapital().multiply(r).divide(HUNDRED, 10, RoundingMode.HALF_EVEN));
+            sum = sum.add(r);
+            best = best == null || r.compareTo(best) > 0 ? r : best;
+            worst = worst == null || r.compareTo(worst) < 0 ? r : worst;
+            if (r.signum() > 0) {
+                wins++;
+            }
+            equity *= Math.max(0, 1 + r.doubleValue() / 100);
+            peak = Math.max(peak, equity);
+            maxDrawdown = Math.max(maxDrawdown, peak == 0 ? 0 : (peak - equity) / peak * 100);
+        }
+        BigDecimal mean = sum.divide(BigDecimal.valueOf(n), 10, RoundingMode.HALF_EVEN);
+        double variance = 0;
+        for (Sample s : samples) {
+            double d = s.returnPct().doubleValue() - mean.doubleValue();
+            variance += d * d;
+        }
+        BigDecimal stdev = BigDecimal.valueOf(n > 1 ? Math.sqrt(variance / (n - 1)) : 0);
+        BigDecimal weighted = totalCapital.signum() == 0 ? BigDecimal.ZERO
+                : totalProfit.multiply(HUNDRED).divide(totalCapital, 10, RoundingMode.HALF_EVEN);
+        BigDecimal winRate = BigDecimal.valueOf(wins).multiply(HUNDRED).divide(BigDecimal.valueOf(n), 10, RoundingMode.HALF_EVEN);
+        return new StatisticsResult(n,
+                totalCapital.setScale(2, RoundingMode.HALF_EVEN),
+                totalProfit.setScale(2, RoundingMode.HALF_EVEN),
+                mean.setScale(4, RoundingMode.HALF_EVEN),
+                weighted.setScale(4, RoundingMode.HALF_EVEN),
+                stdev.setScale(4, RoundingMode.HALF_EVEN),
+                best.setScale(4, RoundingMode.HALF_EVEN),
+                worst.setScale(4, RoundingMode.HALF_EVEN),
+                BigDecimal.valueOf(maxDrawdown).setScale(4, RoundingMode.HALF_EVEN),
+                winRate.setScale(4, RoundingMode.HALF_EVEN));
     }
 
     public ProjectionResult calculateProjection(
