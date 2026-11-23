@@ -1,6 +1,7 @@
 """Request/response contracts of the calc-engine (consumed by the Java API)."""
 
 from decimal import Decimal
+from typing import Annotated
 
 from pydantic import BaseModel, Field
 
@@ -40,3 +41,16 @@ class StatisticsResponse(BaseModel):
     worst_return_pct: Decimal
     max_drawdown_pct: Decimal
     win_rate_pct: Decimal
+
+
+class SentimentRequest(BaseModel):
+    scores: list[Annotated[Decimal, Field(ge=-1, le=1)]]
+
+
+class SentimentResponse(BaseModel):
+    count: int
+    mean_score: Decimal
+    label: str
+    bullish_count: int
+    neutral_count: int
+    bearish_count: int

@@ -44,7 +44,7 @@ springdoc:
     path: /v3/api-docs
 
 ritech:
-  version: 0.3.0
+  version: 0.4.0
   timezone: America/Bogota
   security:
     jwt-secret: ${JWT_SECRET:}
@@ -77,3 +77,11 @@ ritech:
     monthly-budget-usd: ${AI_MONTHLY_BUDGET_USD:5}
     input-price-per-mtok: ${AI_INPUT_PRICE_PER_MTOK:0}
     output-price-per-mtok: ${AI_OUTPUT_PRICE_PER_MTOK:0}
+  news:
+    provider: ${NEWS_PROVIDER:fixed}
+    tickers: QQQ
+    refresh-cron: ${NEWS_REFRESH_CRON:0 0 */6 * * *}
+    max-daily-calls: ${NEWS_MAX_DAILY_CALLS:4}
+    refresh-on-startup: ${NEWS_REFRESH_ON_STARTUP:true}
+    alert-headlines: 5
+    alert-window: 48h

@@ -10,7 +10,7 @@ import org.springframework.util.StreamUtils;
 /** Versioned prompt (resources/prompts). Changing the text means a new version file. */
 final class AlertPrompt {
 
-    static final String VERSION = "alert-v1";
+    static final String VERSION = "alert-v2";
     private static final String TEMPLATE = load("prompts/" + VERSION + ".txt");
 
     private AlertPrompt() {}
@@ -24,7 +24,14 @@ final class AlertPrompt {
                 .replace("{{initialCapital}}", c.initialCapital().toPlainString())
                 .replace("{{currency}}", c.currency())
                 .replace("{{finalAmount}}", c.finalAmount().toPlainString())
-                .replace("{{profit}}", c.profit().toPlainString());
+                .replace("{{profit}}", c.profit().toPlainString())
+                .replace("{{news}}", news(c));
+    }
+
+    private static String news(AlertContext c) {
+        return c.headlines().isEmpty()
+                ? "- Sin noticias recientes disponibles."
+                : "- " + String.join("\n- ", c.headlines());
     }
 
     private static String load(String path) {

@@ -20,6 +20,7 @@ import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 
 import co.ritech.config.RitechProperties;
+import co.ritech.news.NewsService;
 import co.ritech.simulation.Simulation;
 
 /**
@@ -37,6 +38,7 @@ public class AiAlertService {
     private final AiAlertRepository repository;
     private final AiAlertGenerator generator;
     private final ApplicationEventPublisher events;
+    private final NewsService news;
     private final RitechProperties properties;
     private final Clock clock;
 
@@ -44,19 +46,21 @@ public class AiAlertService {
             AiAlertRepository repository,
             AiAlertGenerator generator,
             ApplicationEventPublisher events,
+            NewsService news,
             RitechProperties properties,
             Clock clock) {
         this.repository = repository;
         this.generator = generator;
         this.events = events;
+        this.news = news;
         this.properties = properties;
         this.clock = clock;
     }
 
-    /** Must run inside the simulation transaction. */
+    /** Must run inside the simulation transaction. Headlines come from the stored news (Phase 3). */
     public void requestFor(Simulation simulation) {
         AiAlert alert = repository.save(new AiAlert(simulation.getId(), simulation.getUserId(), clock.instant()));
-        events.publishEvent(new AiAlertRequested(alert.getId(), AlertContext.from(simulation)));
+        events.publishEvent(new AiAlertRequested(alert.getId(), AlertContext.from(simulation, news.recentHeadlines())));
     }
 
     @Async

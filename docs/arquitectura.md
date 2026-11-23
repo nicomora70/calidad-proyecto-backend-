@@ -102,6 +102,8 @@ Flujo recomendado en el frontend:
 | `GET /api/simulations`, `GET /api/dashboard/statistics` | ADMIN |
 | `/api/users/**` | ADMIN |
 | `GET /api/audit` | ADMIN, IT_MANAGER |
+| `GET /api/news`, `GET /api/news/sentiment` | cualquiera autenticado |
+| `POST /api/news/refresh` | ADMIN |
 
 ### Convenciones
 

@@ -132,12 +132,24 @@ presenta como estimación, no como promesa de rentabilidad.
    `FAILED`. Aplica la misma regla de dueño que la simulación.
 
 Toda alerta lleva el aviso "Contenido generado por IA; no constituye asesoría financiera".
-Las noticias se incorporan al prompt en la Fase 3.
+Desde la Fase 3 el prompt (`alert-v2`) incluye los titulares recientes guardados (CU-06).
 
 ### CU-06 Noticias (Fase 3)
-Un proceso programado descarga noticias de QQQ/NASDAQ (Alpha Vantage `NEWS_SENTIMENT`)
-cada N horas, las deduplica por URL y las guarda con su puntaje de sentimiento. Se exponen
-como feed paginado.
+1. Al arrancar (`NEWS_REFRESH_ON_STARTUP`) y según `NEWS_REFRESH_CRON` (cada 6 h por defecto,
+   en la zona horaria de la instalación), la API descarga el feed de `NEWS_PROVIDER`:
+   - `fixed`: tres artículos de ejemplo, para demo y CI.
+   - `alphavantage`: `NEWS_SENTIMENT` de QQQ (comparte la clave y la cuota con el mercado).
+2. Las URL ya guardadas se descartan, de modo que cada artículo se guarda una sola vez. Los
+   artículos sin URL, sin título o con fecha inválida se omiten sin perder el resto del lote.
+3. Con un proveedor de cuota limitada se permiten como máximo `NEWS_MAX_DAILY_CALLS` descargas
+   por día (4 por defecto, de las 25 gratuitas). Al superarlo → `429 NEWS_QUOTA_EXCEEDED`.
+   Una falla programada solo queda en el log; un refresco manual fallido → `502 NEWS_UNAVAILABLE`.
+4. `GET /api/news`: feed paginado (más reciente primero), con filtros `from`/`to` (fecha de
+   publicación, inclusivas) y `sentiment` (etiqueta, sin distinguir mayúsculas).
+5. `GET /api/news/sentiment?date=`: **Python** promedia los puntajes del día y devuelve la
+   etiqueta y la distribución (alcista, neutral, bajista). Escala de Alpha Vantage:
+   ≤ −0,35 Bearish · ≤ −0,15 Somewhat-Bearish · < 0,15 Neutral · < 0,35 Somewhat-Bullish · resto Bullish.
+6. La alerta con IA (CU-05) recibe los últimos 5 titulares de las 48 h previas con su etiqueta.
 
 ### CU-07 Notificaciones (Fase 4)
 Canales: en la app (bandeja) y correo. Disparadores: alerta IA nueva, variación del día
@@ -184,5 +196,7 @@ que el frontend usa para traducir el mensaje.
 | 409 | `LICENSE_USER_LIMIT` | Se superó el máximo de usuarios de la licencia |
 | 402 | `LICENSE_EXPIRED` | Licencia vencida (modo solo lectura) |
 | 423 | `ACCOUNT_LOCKED` | Demasiados intentos fallidos |
+| 429 | `NEWS_QUOTA_EXCEEDED` | Se alcanzó el tope diario de descargas de noticias |
 | 502 | `MARKET_DATA_UNAVAILABLE` | Falló el proveedor de mercado |
+| 502 | `NEWS_UNAVAILABLE` | Falló el proveedor de noticias en un refresco manual |
 | 503 | `CALC_ENGINE_UNAVAILABLE` | El motor de cálculo no responde |

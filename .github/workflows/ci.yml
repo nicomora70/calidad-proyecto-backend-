@@ -92,6 +92,11 @@ jobs:
             sleep 0.5
           done
           test "$status" = "DONE"
+
+          # News: the fixed provider was ingested on startup; sentiment comes from calc-engine
+          curl -fsS "$API/api/news" -H "Authorization: Bearer $inv" | jq -e '.page.totalElements == 3'
+          curl -fsS "$API/api/news/sentiment" -H "Authorization: Bearer $inv" | jq -e '.sentiment.count >= 0 and (.sentiment.label | length > 0)'
+          test "$(curl -s -o /dev/null -w '%{http_code}' -X POST $API/api/news/refresh -H "Authorization: Bearer $inv")" = "403"
       - name: Logs on failure
         if: failure()
         run: docker compose logs
