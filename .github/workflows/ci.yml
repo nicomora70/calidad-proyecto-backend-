@@ -112,12 +112,11 @@ jobs:
           curl -fsS -X POST "$API/api/v1/me/notifications/read-all" -H "Authorization: Bearer $inv" | jq -e '.updated >= 1'
           curl -fsS "$API/readyz" | jq -e '.status == "UP"'
 
-          # Phase 5: public branding, license disabled in CI, projection needs 5 market days (only 1 here)
+          # Phase 5: public branding, license disabled in CI, projection over the seeded market history (V7)
           curl -fsS "$API/api/v1/settings/branding" | jq -e '.productName == "RiTech"'
           curl -fsS "$API/api/v1/license" -H "Authorization: Bearer $admin" | jq -e '.state == "DISABLED"'
-          code=$(curl -s -o /dev/null -w '%{http_code}' -X POST $API/api/v1/projections \
-            -H 'Content-Type: application/json' -H "Authorization: Bearer $inv" -d '{"initialCapital": 1000000, "horizonDays": 20}')
-          test "$code" = "422"
+          post /api/v1/projections '{"initialCapital": 1000000, "horizonDays": 20}' "$inv" \
+            | jq -e '.projection.result.sampleSize >= 250 and .projection.result.base.finalAmount > 0'
           curl -fsS "$API/api/v1/me/simulations/export" -H "Authorization: Bearer $inv" -o mine.csv
           grep -q "1000000.00" mine.csv
       - name: Hardening (headers, CORS, internal metrics, API v1 contract)
