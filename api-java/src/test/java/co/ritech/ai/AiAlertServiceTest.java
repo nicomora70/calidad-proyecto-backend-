@@ -65,7 +65,13 @@ class AiAlertServiceTest {
         when(repository.save(any(AiAlert.class))).thenAnswer(inv -> inv.getArgument(0));
         when(repository.spentSince(any())).thenReturn(BigDecimal.ZERO);
         service = new AiAlertService(
-                repository, generator, events, news, TestFixtures.properties(), Clock.fixed(now, ZoneOffset.UTC));
+                repository,
+                generator,
+                events,
+                news,
+                TestFixtures.allModules(),
+                TestFixtures.properties(),
+                Clock.fixed(now, ZoneOffset.UTC));
     }
 
     private static Simulation simulation() {

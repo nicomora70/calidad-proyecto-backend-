@@ -20,6 +20,8 @@ import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 
 import co.ritech.config.RitechProperties;
+import co.ritech.license.LicenseModel.Module;
+import co.ritech.license.LicenseService;
 import co.ritech.news.NewsService;
 import co.ritech.simulation.Simulation;
 
@@ -39,6 +41,7 @@ public class AiAlertService {
     private final AiAlertGenerator generator;
     private final ApplicationEventPublisher events;
     private final NewsService news;
+    private final LicenseService license;
     private final RitechProperties properties;
     private final Clock clock;
 
@@ -47,18 +50,23 @@ public class AiAlertService {
             AiAlertGenerator generator,
             ApplicationEventPublisher events,
             NewsService news,
+            LicenseService license,
             RitechProperties properties,
             Clock clock) {
         this.repository = repository;
         this.generator = generator;
         this.events = events;
         this.news = news;
+        this.license = license;
         this.properties = properties;
         this.clock = clock;
     }
 
     /** Must run inside the simulation transaction. Headlines come from the stored news (Phase 3). */
     public void requestFor(Simulation simulation) {
+        if (!license.hasModule(Module.AI_ALERTS)) {
+            return; // plan without AI: no alert row, GET .../alert answers 403 MODULE_NOT_LICENSED
+        }
         AiAlert alert = repository.save(new AiAlert(simulation.getId(), simulation.getUserId(), clock.instant()));
         events.publishEvent(new AiAlertRequested(alert.getId(), AlertContext.from(simulation, news.recentHeadlines())));
     }

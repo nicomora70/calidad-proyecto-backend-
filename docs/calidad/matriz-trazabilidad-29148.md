@@ -31,8 +31,10 @@ Prioridad: **M** = obligatorio (*must*) · **S** = deseable (*should*). Estado: 
 | RF-20 | Alertas con IA por simulación, asíncronas y con límite de gasto | S | CU-05 | `AiAlertService`, `AiAlertController`, `TemplateAiAlertGenerator`, `GeminiAiAlertGenerator` | `AiAlertServiceTest`, `AlertGeneratorsTest`, `AiAlertControllerTest`, `InstallationFlowIT` | ✅ (con noticias desde la Fase 3) |
 | RF-21 | Ingesta programada de noticias, deduplicada, con tope diario y sentimiento del día | S | CU-06 | `NewsIngestionService`, `NewsService`, `NewsController`, calc-engine `sentiment.py` | `NewsIngestionServiceTest`, `NewsServiceTest`, `AlphaVantageNewsParseTest`, `NewsControllerTest`, `test_sentiment.py`, `InstallationFlowIT` | ✅ |
 | RF-22 | Notificaciones en la app y por correo (outbox con reintentos) según preferencias | S | CU-07 | `NotificationService`, `NotificationDispatcher`, `NotificationTriggers`, `EmailSender`, `NotificationController` | `NotificationServiceTest`, `NotificationDispatcherTest`, `NotificationTriggersTest`, `EmailSenderTest`, `NotificationControllerTest`, `InstallationFlowIT` | ✅ (aviso de licencia, en la Fase 5) |
-| RF-23 | Licencia firmada con modo solo lectura al vencer | M | CU-08 | Fase 5 | — | ⬜ |
-| RF-24 | Escenarios y proyección (pesimista, base, optimista) | S | CU-04 | Fase 5 | — | ⬜ |
+| RF-23 | Licencia firmada con modo solo lectura al vencer, módulos por plan y tope de usuarios | M | CU-08 | `LicenseVerifier`, `LicenseService`, `LicenseInterceptor`, `LicenseController`, `tools/license` | `LicenseVerifierTest`, `LicenseServiceTest`, `LicenseInterceptorTest`, `LicenseFlowIT` | ✅ |
+| RF-24 | Escenarios y proyección (pesimista, base, optimista) | S | CU-04 | `ProjectionService`, calc-engine `projection.py` | `ProjectionServiceTest`, `test_projection.py`, `InstallationFlowIT` | ✅ |
+| RF-25 | Exportes CSV de historial y auditoría | S | CU-10 | `ExportService`, `Csv` | `ExportServiceTest`, `InstallationFlowIT`, `LicenseFlowIT` | ✅ |
+| RF-26 | Branding por instalación | C | CU-10 | `BrandingService`, `BrandingController` | `BrandingServiceTest`, `BrandingControllerTest`, `InstallationFlowIT` | ✅ |
 
 ## Requisitos no funcionales (vinculados a ISO/IEC 25010)
 
@@ -47,7 +49,7 @@ Prioridad: **M** = obligatorio (*must*) · **S** = deseable (*should*). Estado: 
 | RNF-07 | Instalación con `docker compose up` en ≤ 3 pasos | Flexibilidad — instalabilidad | Smoke test de CI | ✅ |
 | RNF-08 | p95 ≤ 500 ms en `POST /api/simulations` | Eficiencia de desempeño | k6 (Fase 6) | ⬜ |
 | RNF-09 | 0 vulnerabilidades críticas o altas | Seguridad — resistencia | Trivy / Dependency-Check (Fase 6) | ⬜ |
-| RNF-10 | Respaldo diario con restauración probada | Fiabilidad — recuperabilidad | Fase 5 | ⬜ |
+| RNF-10 | Respaldo diario con restauración probada | Fiabilidad — recuperabilidad | `pg-backup` + paso "Backup and restore" del CI | ✅ |
 
 ## Gestión de cambios en los requisitos
 Un requisito nuevo o modificado se registra primero aquí (con un ID nuevo; los IDs nunca se

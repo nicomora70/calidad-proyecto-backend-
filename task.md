@@ -136,21 +136,21 @@
 - [x] Envío con reintentos (backoff exponencial, `max-attempts`) y estado (`PENDING`, `SENT`, `FAILED`); patrón outbox en BD
 - [ ] (Opcional) Notificaciones en tiempo real con SSE: `GET /api/me/notifications/stream`
 
-## Fase 5 — Producto comercial (instalación por cliente)
+## Fase 5 — Producto comercial (instalación por cliente) ✅
 
-- [ ] **Licencia**: archivo JSON firmado con Ed25519 (empresa, `maxUsers`, `modules`, `expiresAt`)
-- [ ] Herramienta interna (fuera de este repo o en `tools/`) para emitir licencias con la clave privada
-- [ ] Validación al arrancar y modo solo lectura si está vencida (`402 LICENSE_EXPIRED`)
-- [ ] `GET /api/license` (IT_MANAGER/ADMIN) y `POST /api/license` (IT_MANAGER) para renovar
-- [ ] Módulos por paquete (Básico, Profesional, Empresarial) que habilitan o deshabilitan endpoints
-- [ ] Escenarios y proyección (Empresarial): `POST /api/projections` → calc-engine `POST /calculations/projection` (percentiles y Monte Carlo con NumPy)
-- [ ] Configuración por instalación: `GET /api/settings/branding` (nombre, logo, colores) para el frontend
-- [ ] Exportar a CSV o Excel el historial y la auditoría
-- [ ] Respaldos: servicio `pg-backup` en compose con `pg_dump` diario y retención configurable; script de restauración
-- [ ] Publicar imágenes versionadas (`ghcr.io/.../ritech-api:x.y.z`) con un workflow de release por tag
-- [ ] `docs/despliegue.md`: requisitos del servidor, instalación, actualización, respaldos y TLS con reverse proxy (Caddy o Nginx)
-- [ ] `docs/manual-operacion.md` para el IT_MANAGER del cliente
-- [ ] Términos de uso y aviso de que el software no constituye asesoría financiera
+- [x] **Licencia**: JSON firmado con Ed25519 (`ritech-license-v1`: empresa, plan, `maxUsers`, `issuedAt`, `expiresAt`); la firma se verifica otra vez en cada arranque
+- [x] Herramienta interna `tools/license/LicenseTool.java` (keygen e issue, solo JDK); la clave privada vive fuera del repositorio
+- [x] `LICENSE_MODE=enforced`: modo solo lectura si la licencia falta o venció (`402 LICENSE_EXPIRED`); `disabled` para desarrollo, demo y CI
+- [x] `GET /api/license` (IT_MANAGER/ADMIN) y `POST /api/license` (IT_MANAGER/ADMIN; el ADMIN también, para el primer arranque sin IT_MANAGER)
+- [x] Módulos por plan (Básico, Profesional, Empresarial) aplicados por `LicenseInterceptor` (`403 MODULE_NOT_LICENSED`) y en los procesos en segundo plano; tope de usuarios (`409 LICENSE_USER_LIMIT`); aviso a 30 y 7 días
+- [x] Escenarios y proyección (Empresarial): `POST /api/projections` → calc-engine `POST /calculations/projection` (P10/P50/P90 y Monte Carlo con NumPy)
+- [x] Configuración por instalación: `GET /api/settings/branding` (público) y `PUT` (ADMIN)
+- [x] Exportar a CSV (UTF-8 con BOM, protegido contra inyección de fórmulas) el historial propio, el global (ADMIN) y la auditoría
+- [x] Respaldos: servicio `pg-backup` (`pg_dump` diario y retención configurable) y `restore.sh`; el CI prueba la restauración en cada ejecución
+- [x] Imágenes versionadas en `ghcr.io` con `.github/workflows/release.yml` (tag `vX.Y.Z`)
+- [x] `docs/instalacion-cliente.md`: requisitos, instalación, TLS con Caddy, respaldos y actualización (la guía de Railway se agrega aparte, con la rama `despliegue`)
+- [x] `docs/manual-operacion.md` para el IT_MANAGER del cliente
+- [x] `docs/terminos-de-uso.md` con el aviso de que el software no constituye asesoría financiera
 
 ## Fase 6 — Endurecimiento y entrega al frontend
 

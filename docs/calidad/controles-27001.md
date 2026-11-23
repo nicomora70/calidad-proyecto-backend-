@@ -17,7 +17,7 @@ Estado: ✅ implementado · 🟡 parcial · ⬜ pendiente · ➖ responsabilidad
 | **5.17** Información de autenticación | Contraseña temporal de cambio obligatorio; mínimo 8 caracteres; BCrypt (cost 12) | `PasswordChangeRequiredInterceptor`, `UserDtos` | ✅ |
 | **5.18** Derechos de acceso | Roles ADMIN, IT_MANAGER e INVESTOR; un cambio de rol revoca sesiones; regla LAST_ADMIN | `@PreAuthorize`, `UserService.changeRole` | ✅ |
 | **5.34** Privacidad y protección de datos personales | Datos mínimos (nombre y correo); borrado lógico; aviso de privacidad y derecho de supresión | Modelo de datos | 🟡 Falta el procedimiento de supresión definitiva (habeas data) |
-| **5.37** Procedimientos operativos documentados | Instalación, variables y primer uso documentados | `README.md`, `.env.example` | 🟡 Falta `docs/manual-operacion.md` (Fase 5) |
+| **5.37** Procedimientos operativos documentados | Instalación, variables y primer uso documentados | `README.md`, `.env.example`, `docs/instalacion-cliente.md`, `docs/manual-operacion.md` | ✅ |
 | **8.2** Derechos de acceso privilegiado | Funciones de administración exclusivas de ADMIN, todas auditadas | `UserController`, `audit_log` | ✅ |
 | **8.3** Restricción de acceso a la información | Cada inversionista solo ve sus simulaciones (404 a las ajenas) | `SimulationService.get` | ✅ |
 | **8.4** Acceso al código fuente | Repositorio privado o controlado y cambios vía PR | GitHub | 🟡 Falta protección de rama en `main` |
@@ -25,12 +25,12 @@ Estado: ✅ implementado · 🟡 parcial · ⬜ pendiente · ➖ responsabilidad
 | **8.8** Gestión de vulnerabilidades técnicas | Escaneo de dependencias e imágenes | Fase 6 (Dependabot, Trivy) | ⬜ |
 | **8.9** Gestión de la configuración | Configuración por variables de entorno, versionada en `.env.example`; esquema con Flyway | `docker-compose.yml`, migraciones | ✅ |
 | **8.12** Prevención de fuga de datos | Secretos fuera del repositorio (`.env` en `.gitignore`); los errores no exponen trazas internas | `.gitignore`, `ApiExceptionHandler` | ✅ |
-| **8.13** Respaldo de la información | `pg_dump` diario con retención | Fase 5 | ⬜ |
+| **8.13** Respaldo de la información | `pg_dump` diario con retención; restauración probada en cada CI | `pg-backup`, `ops/backup/*.sh`, `ci.yml` | ✅ (la copia fuera del servidor corre por cuenta del cliente) |
 | **8.15** Registro (*logging*) | Auditoría de solo inserción (quién, qué, cuándo, IP, navegador) y logs JSON con `traceId` | `AuditService`, `RequestIdFilter` | ✅ |
 | **8.16** Actividades de seguimiento | Detección de reutilización de tokens y de bloqueos de cuenta (eventos auditados) | `REFRESH_TOKEN_REUSED`, `ACCOUNT_LOCKED`; notificación `SECURITY_EVENT` a IT_MANAGER y ADMIN (`NotificationTriggers`) | ✅ |
 | **8.17** Sincronización de relojes | Todas las marcas de tiempo en UTC (`TIMESTAMPTZ`, `Clock` UTC) | `application.yml`, `WebConfig` | ✅ |
 | **8.20** Seguridad de las redes | El motor de cálculo y Postgres sin puertos públicos; red interna de Docker | `docker-compose.yml` | ✅ |
-| **8.24** Uso de criptografía | HMAC-SHA256 en los JWT, BCrypt, SHA-256 en los refresh tokens, HTTPS en el proxy | `SecurityConfig` | 🟡 TLS documentado, no incluido (Fase 5) |
+| **8.24** Uso de criptografía | HMAC-SHA256 en los JWT, BCrypt, SHA-256 en los refresh tokens, HTTPS en el proxy | `SecurityConfig`, Caddy en `docs/instalacion-cliente.md`; licencias firmadas con Ed25519 | ✅ (TLS en el proxy del cliente) |
 | **8.25** Ciclo de vida de desarrollo seguro | Ramas, PR, CI obligatorio y definición de "hecho" | `task.md`, `.github/workflows/ci.yml` | ✅ |
 | **8.26** Requisitos de seguridad de las aplicaciones | Requisitos RNF-02, RNF-03 y RNF-09 | `matriz-trazabilidad-29148.md` | ✅ |
 | **8.28** Codificación segura | Consultas parametrizadas (JPA y `JdbcTemplate`), validación de entrada, CORS restringido, contenedores sin root, CSRF no aplica (sin cookies) | Código | ✅ |
@@ -43,5 +43,5 @@ Estado: ✅ implementado · 🟡 parcial · ⬜ pendiente · ➖ responsabilidad
 1. Protección de la rama `main` (PR obligatorio y CI requerido).
 2. Procedimiento de supresión definitiva de datos personales (Ley 1581).
 3. ~~Alertas de seguridad al IT_MANAGER~~ (cerrado en la Fase 4).
-4. Respaldos, TLS y manual de operación (Fase 5).
+4. ~~Respaldos, TLS y manual de operación~~ (cerrado en la Fase 5).
 5. Escaneo de vulnerabilidades y revisión ASVS (Fase 6).

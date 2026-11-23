@@ -6,6 +6,11 @@ import java.time.ZoneId;
 import java.util.List;
 
 import co.ritech.config.RitechProperties;
+import co.ritech.license.LicenseService;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public final class TestFixtures {
 
@@ -42,6 +47,15 @@ public final class TestFixtures {
                 new RitechProperties.News("fixed", "QQQ", "-", 4, false, 5, Duration.ofHours(48)),
                 new RitechProperties.Notifications(
                         "RiTech <no-reply@test>", 3, Duration.ofMinutes(1), new BigDecimal("2.00")),
+                new RitechProperties.License("disabled", "/nonexistent/license.json", "classpath:unused", 30),
                 ZoneId.of("America/Bogota"));
+    }
+
+    /** License with every module enabled (LICENSE_MODE=disabled). */
+    public static LicenseService allModules() {
+        LicenseService license = mock(LicenseService.class);
+        when(license.hasModule(any())).thenReturn(true);
+        when(license.writable()).thenReturn(true);
+        return license;
     }
 }

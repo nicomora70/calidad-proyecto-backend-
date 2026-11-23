@@ -12,6 +12,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import co.ritech.common.BusinessException;
 import co.ritech.config.RitechProperties;
+import co.ritech.license.LicenseModel.Module;
+import co.ritech.license.LicenseService;
 import co.ritech.notification.NotificationEnums.NotificationChannel;
 import co.ritech.notification.NotificationEnums.NotificationType;
 
@@ -23,6 +25,7 @@ public class NotificationService {
     private final NotificationPreferenceRepository preferences;
     private final EmailSender email;
     private final RitechProperties properties;
+    private final LicenseService license;
     private final Clock clock;
 
     public NotificationService(
@@ -30,11 +33,13 @@ public class NotificationService {
             NotificationPreferenceRepository preferences,
             EmailSender email,
             RitechProperties properties,
+            LicenseService license,
             Clock clock) {
         this.repository = repository;
         this.preferences = preferences;
         this.email = email;
         this.properties = properties;
+        this.license = license;
         this.clock = clock;
     }
 
@@ -50,6 +55,10 @@ public class NotificationService {
      */
     @Transactional
     public void notify(UUID userId, NotificationType type, String title, String body, String dedupeKey) {
+        boolean operational = type == NotificationType.SECURITY_EVENT || type == NotificationType.LICENSE_EXPIRING;
+        if (!operational && !license.hasModule(Module.NOTIFICATIONS)) {
+            return; // security and license notices are sent on every plan
+        }
         NotificationPreference pref = preferencesOf(userId);
         if (pref.isInAppEnabled()) {
             create(userId, type, NotificationChannel.IN_APP, title, body, dedupeKey);

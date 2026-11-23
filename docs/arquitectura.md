@@ -104,6 +104,11 @@ Flujo recomendado en el frontend:
 | `GET /api/audit` | ADMIN, IT_MANAGER |
 | `GET /api/news`, `GET /api/news/sentiment` | cualquiera autenticado |
 | `POST /api/news/refresh` | ADMIN |
+| `GET /api/settings/branding` | público |
+| `PUT /api/settings/branding`, `GET /api/simulations/export` | ADMIN |
+| `POST /api/projections` | INVESTOR, ADMIN (plan Empresarial) |
+| `GET /api/me/simulations/export` | cualquiera autenticado |
+| `GET /api/license`, `POST /api/license`, `GET /api/audit/export` | ADMIN, IT_MANAGER |
 
 ### Convenciones
 
@@ -127,7 +132,7 @@ co.ritech
 ├── user         usuarios, roles, /api/me, admin inicial
 ├── auth         login, refresh tokens, logout, cambio de contraseña
 ├── security     configuración de Spring Security, JWT, CurrentUser
-├── license      (Fase 5) validación de la licencia
+├── license      licencia firmada, módulos por plan y modo solo lectura
 ├── ai / news / notification   (Fases 2–4)
 ```
 

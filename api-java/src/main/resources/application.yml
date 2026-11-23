@@ -60,7 +60,7 @@ springdoc:
     path: /v3/api-docs
 
 ritech:
-  version: 0.5.0
+  version: 0.6.0
   timezone: America/Bogota
   security:
     jwt-secret: ${JWT_SECRET:}
@@ -107,3 +107,8 @@ ritech:
     retry-backoff: 1m
     dispatch-interval-ms: 30000
     default-variation-threshold-pct: ${NOTIFICATION_VARIATION_THRESHOLD_PCT:2.00}
+  license:
+    mode: ${LICENSE_MODE:disabled}
+    file: ${LICENSE_FILE:/app/license/license.json}
+    public-key-location: ${LICENSE_PUBLIC_KEY_LOCATION:classpath:license/public-key.pem}
+    expiry-warning-days: 30

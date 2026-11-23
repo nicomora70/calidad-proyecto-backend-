@@ -96,4 +96,9 @@ equipo hay que agregar `ports: ["5432:5432"]`.
 - **Fase 2** ✅ alertas con IA asíncronas (`AI_PROVIDER=template` o `gemini`) con límite de gasto
 - **Fase 3** ✅ noticias programadas (`NEWS_PROVIDER=fixed` o `alphavantage`), sentimiento del día y titulares en la IA
 - **Fase 4** ✅ notificaciones en la app y por correo (SMTP opcional), con preferencias, outbox y alertas de seguridad
-- Siguientes: producto comercial (licencia, proyecciones, respaldos) y endurecimiento (ver [task.md](task.md))
+- **Fase 5** ✅ licencia firmada (Ed25519) con planes y modo solo lectura, proyecciones Monte Carlo, exportes CSV, branding, respaldos con restauración probada y release a `ghcr.io`
+- Siguiente: endurecimiento y entrega al frontend (Fase 6)
+
+Instalación en el cliente: [docs/instalacion-cliente.md](docs/instalacion-cliente.md) ·
+Operación: [docs/manual-operacion.md](docs/manual-operacion.md) ·
+Términos: [docs/terminos-de-uso.md](docs/terminos-de-uso.md) (ver [task.md](task.md))

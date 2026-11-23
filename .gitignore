@@ -16,3 +16,10 @@ venv/
 .DS_Store
 Thumbs.db
 .vscode/
+
+# Client data on the server (never in the repository)
+/backups/
+/license/
+*.dump
+# Vendor license key: must never be committed
+private-key.pem

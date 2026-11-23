@@ -69,6 +69,7 @@ class JwtServiceTest {
                 properties.ai(),
                 properties.news(),
                 properties.notifications(),
+                properties.license(),
                 properties.timezone());
 
         assertThatThrownBy(() -> config.jwtSigningKey(weak)).isInstanceOf(IllegalStateException.class);

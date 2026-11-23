@@ -23,6 +23,7 @@ public record RitechProperties(
         Ai ai,
         News news,
         Notifications notifications,
+        License license,
         @DefaultValue("America/Bogota") ZoneId timezone) {
 
     public record Simulation(
@@ -93,4 +94,15 @@ public record RitechProperties(
             @DefaultValue("1m") Duration retryBackoff,
             /* Default |daily variation| (%) that triggers MARKET_VARIATION */
             @DefaultValue("2.00") BigDecimal defaultVariationThresholdPct) {}
+
+    public record License(
+            /* disabled (development, demo, CI) | enforced (client installations) */
+            @DefaultValue("disabled") String mode,
+            /* Installed on first boot if the database has no license yet */
+            @DefaultValue("/app/license/license.json") String file,
+            /* Vendor public key; the private key never leaves the vendor (tools/license) */
+            @DefaultValue("classpath:license/public-key.pem")
+            String publicKeyLocation,
+
+            @DefaultValue("30") int expiryWarningDays) {}
 }

@@ -20,6 +20,7 @@ import org.springframework.transaction.event.TransactionalEventListener;
 
 import co.ritech.ai.AiAlertReady;
 import co.ritech.audit.SecurityEventRecorded;
+import co.ritech.license.LicenseExpiringSoon;
 import co.ritech.market.MarketVariationFetched;
 import co.ritech.notification.NotificationEnums.NotificationType;
 import co.ritech.user.Role;
@@ -104,6 +105,25 @@ public class NotificationTriggers {
                     "Usuario afectado: " + who + ". Revisa el registro de auditoría (acción " + event.action() + ").";
             activeUsers(List.of(Role.IT_MANAGER, Role.ADMIN))
                     .forEach(u -> notifications.notify(u.getId(), NotificationType.SECURITY_EVENT, title, body, null));
+        });
+    }
+
+    /** 30 and 7 days before expiry (one notice per window), to IT_MANAGER and ADMIN. */
+    @EventListener
+    public void onLicenseExpiring(LicenseExpiringSoon event) {
+        safely("license expiring", () -> {
+            String window = event.daysRemaining() <= 7 ? "7" : "30";
+            String title = "La licencia vence en " + event.daysRemaining() + " días";
+            String body = "La licencia de " + event.company() + " vence el " + event.expiresAt()
+                    + ". Al vencer, el sistema queda en modo solo lectura. Solicita la renovación e instálala en"
+                    + " Licencia (IT_MANAGER).";
+            activeUsers(List.of(Role.IT_MANAGER, Role.ADMIN))
+                    .forEach(u -> notifications.notify(
+                            u.getId(),
+                            NotificationType.LICENSE_EXPIRING,
+                            title,
+                            body,
+                            "LICENSE_EXPIRING:" + event.licenseId() + ":" + event.expiresAt() + ":" + window));
         });
     }
 

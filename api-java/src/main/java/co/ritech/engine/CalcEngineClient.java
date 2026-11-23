@@ -51,6 +51,14 @@ public class CalcEngineClient {
         return post("/calculations/statistics", new StatisticsRequest(samples), StatisticsResult.class);
     }
 
+    public ProjectionResult calculateProjection(
+            BigDecimal initialCapital, List<BigDecimal> dailyVariationsPct, int horizonDays) {
+        return post(
+                "/calculations/projection",
+                new ProjectionRequest(initialCapital, dailyVariationsPct, horizonDays),
+                ProjectionResult.class);
+    }
+
     public SentimentResult calculateSentiment(List<BigDecimal> scores) {
         return post("/calculations/sentiment", new SentimentRequest(scores), SentimentResult.class);
     }
@@ -108,4 +116,22 @@ public class CalcEngineClient {
     @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
     public record SentimentResult(
             int count, BigDecimal meanScore, String label, int bullishCount, int neutralCount, int bearishCount) {}
+
+    @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
+    public record ProjectionRequest(BigDecimal initialCapital, List<BigDecimal> dailyVariationsPct, int horizonDays) {}
+
+    @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
+    public record Scenario(BigDecimal finalAmount, BigDecimal profit, BigDecimal returnPct) {}
+
+    @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
+    public record ProjectionResult(
+            int horizonDays,
+            int simulations,
+            int sampleSize,
+            BigDecimal leverage,
+            Scenario pessimistic,
+            Scenario base,
+            Scenario optimistic,
+            BigDecimal expectedFinalAmount,
+            BigDecimal probabilityOfLossPct) {}
 }
