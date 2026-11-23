@@ -19,5 +19,6 @@ EXPOSE 8000
 HEALTHCHECK --interval=15s --timeout=3s --retries=5 \
   CMD ["python", "-c", "import os, urllib.request; urllib.request.urlopen(f'http://localhost:{os.environ.get(\"PORT\", \"8000\")}/health')"]
 
-# "::" listens on IPv6 and IPv4: Railway private networking resolves over IPv6
-CMD ["sh", "-c", "exec uvicorn app.main:app --host :: --port ${PORT:-8000}"]
+# HOST=:: only where the private network is IPv6-only (legacy Railway environments):
+# asyncio binds "::" as IPv6-only, so IPv4 clients (docker compose) could not connect.
+CMD ["sh", "-c", "exec uvicorn app.main:app --host ${HOST:-0.0.0.0} --port ${PORT:-8000}"]

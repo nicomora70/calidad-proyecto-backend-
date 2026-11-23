@@ -17,8 +17,9 @@ dos variables que se cambian en la plataforma, sin tocar código: `CORS_ALLOWED_
 1. **New Project → Deploy from GitHub repo**, elegir este repositorio.
 2. **Postgres**: `+ New → Database → PostgreSQL`.
 3. **Servicio `calc-engine`**: `+ New → GitHub repo`, *Root Directory* = `calc-engine`.
-   Variable `PORT=8000`. No generar dominio público: solo lo usa la API por la red privada
-   (uvicorn escucha en `::`, IPv4 e IPv6, como exige la red privada de Railway).
+   Variable `PORT=8000`. No generar dominio público: solo lo usa la API por la red privada.
+   Si la API no llega al calc-engine (`503` en simulaciones o en `/api/v1/news/sentiment`), el
+   entorno de Railway tiene red privada solo IPv6: añadir `HOST=::` a este servicio.
 4. **Servicio `api`**: `+ New → GitHub repo`, *Root Directory* = `api-java`.
    - *Settings → Healthcheck Path* = `/readyz` (Actuator vive en el puerto interno 8081, que no se publica).
    - *Networking → Generate Domain*. Railway inyecta `PORT` y la API lo usa (`server.port: ${PORT:8080}`).
