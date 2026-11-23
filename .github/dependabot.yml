@@ -1,27 +1,48 @@
 version: 2
+# One grouped PR per ecosystem and week, so updates do not pile up behind each other.
+# Major jumps that need a planned migration are ignored here and done as their own task:
+# Spring Boot 4 / springdoc 3 (Spring Framework 7), non-LTS Java and very new Python images.
 updates:
   - package-ecosystem: maven
     directory: /api-java
     schedule:
       interval: weekly
-    open-pull-requests-limit: 5
     groups:
-      spring:
-        patterns: ["org.springframework*"]
+      maven:
+        patterns: ["*"]
+        update-types: ["minor", "patch"]
+    ignore:
+      - dependency-name: "org.springframework.boot:*"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "org.springdoc:*"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "org.apache.maven:apache-maven"
   - package-ecosystem: pip
     directory: /calc-engine
     schedule:
       interval: weekly
-    open-pull-requests-limit: 5
+    groups:
+      python:
+        patterns: ["*"]
   - package-ecosystem: docker
     directory: /api-java
     schedule:
-      interval: weekly
+      interval: monthly
+    ignore:
+      # Java 21 LTS until the planned move to 25 LTS
+      - dependency-name: eclipse-temurin
+        update-types: ["version-update:semver-major"]
   - package-ecosystem: docker
     directory: /calc-engine
     schedule:
-      interval: weekly
+      interval: monthly
+    ignore:
+      - dependency-name: python
+        update-types: ["version-update:semver-minor"]
   - package-ecosystem: github-actions
     directory: /
     schedule:
       interval: monthly
+    groups:
+      actions:
+        patterns: ["*"]

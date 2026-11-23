@@ -15,7 +15,7 @@ Prioridad: **M** = obligatorio (*must*) · **S** = deseable (*should*). Estado: 
 | RF-04 | Rechazar un capital < 100.000 COP con `400 INSUFFICIENT_CAPITAL` | M | CU-01 | `SimulationService.simulate` | `rejectsCapitalBelowMinimum`, smoke test | ✅ |
 | RF-05 | La simulación pertenece al usuario autenticado | M | CU-01 | `SimulationController.create` | `investorCreatesSimulationOwnedByTokenSubject` | ✅ |
 | RF-06 | Reutilizar la variación de mercado durante el TTL (6 h) | M | CU-01 | `MarketVariationService` | `reusesFreshCachedValue`, `fetchesWhenCacheIsStale` | ✅ |
-| RF-07 | Solo una consulta al proveedor cuando vence la caché | S | CU-01 | `MarketFetchLock` | — (requiere prueba concurrente) | 🟡 |
+| RF-07 | Solo una consulta al proveedor cuando vence la caché | S | CU-01 | `MarketFetchLock` | `MarketFetchLockIT` (8 llamadas concurrentes → 1 consulta) | ✅ |
 | RF-08 | Historial propio, paginado y filtrable por fechas | M | CU-02 | `MeController.mySimulations` | `InstallationFlowIT.fullInstallationFlow` | ✅ |
 | RF-09 | Ver una simulación ajena responde 404 | M | CU-02 | `SimulationService.get` | `ownerAndAdminCanReadSimulationOthersGetNotFound` | ✅ |
 | RF-10 | Dashboard con KPIs (promedio, ponderado, volatilidad, drawdown, tasa de acierto) solo para ADMIN | M | CU-03 | `DashboardController`, `statistics.py` | `test_aggregates`, `test_max_drawdown`, `InstallationFlowIT` | ✅ |
@@ -35,6 +35,7 @@ Prioridad: **M** = obligatorio (*must*) · **S** = deseable (*should*). Estado: 
 | RF-24 | Escenarios y proyección (pesimista, base, optimista) | S | CU-04 | `ProjectionService`, calc-engine `projection.py` | `ProjectionServiceTest`, `test_projection.py`, `InstallationFlowIT` | ✅ |
 | RF-25 | Exportes CSV de historial y auditoría | S | CU-10 | `ExportService`, `Csv` | `ExportServiceTest`, `InstallationFlowIT`, `LicenseFlowIT` | ✅ |
 | RF-26 | Branding por instalación | C | CU-10 | `BrandingService`, `BrandingController` | `BrandingServiceTest`, `BrandingControllerTest`, `InstallationFlowIT` | ✅ |
+| RF-27 | Supresión definitiva de datos personales a pedido del titular (Ley 1581) | M | CU-11 | `UserService.anonymize`, `NotificationService.onUserAnonymized` | `UserServiceTest`, `InstallationFlowIT` | ✅ |
 
 ## Requisitos no funcionales (vinculados a ISO/IEC 25010)
 

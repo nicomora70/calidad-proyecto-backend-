@@ -88,4 +88,15 @@ public class UserController {
     public void delete(@Parameter(hidden = true) CurrentUser actor, @PathVariable UUID id) {
         service.delete(actor, id);
     }
+
+    @PostMapping("/{id}/anonymize")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @Operation(
+            summary = "Definitive suppression of personal data (Ley 1581, habeas data)",
+            description = "Irreversible. Replaces name and e-mail, revokes sessions and deletes the inbox. "
+                    + "Simulations are kept without identity; the audit log is kept as a legal record. "
+                    + "Works on deleted users too.")
+    public void anonymize(@Parameter(hidden = true) CurrentUser actor, @PathVariable UUID id) {
+        service.anonymize(actor, id);
+    }
 }

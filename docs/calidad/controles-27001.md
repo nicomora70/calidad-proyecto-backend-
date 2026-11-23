@@ -16,11 +16,11 @@ Estado: ✅ implementado · 🟡 parcial · ⬜ pendiente · ➖ responsabilidad
 | **5.16** Gestión de identidades | Sin autoregistro; el ADMIN gestiona el ciclo de vida de las cuentas | `UserService`, `BootstrapAdminInitializer` | ✅ |
 | **5.17** Información de autenticación | Contraseña temporal de cambio obligatorio; mínimo 8 caracteres; BCrypt (cost 12) | `PasswordChangeRequiredInterceptor`, `UserDtos` | ✅ |
 | **5.18** Derechos de acceso | Roles ADMIN, IT_MANAGER e INVESTOR; un cambio de rol revoca sesiones; regla LAST_ADMIN | `@PreAuthorize`, `UserService.changeRole` | ✅ |
-| **5.34** Privacidad y protección de datos personales | Datos mínimos (nombre y correo); borrado lógico; aviso de privacidad y derecho de supresión | Modelo de datos | 🟡 Falta el procedimiento de supresión definitiva (habeas data) |
+| **5.34** Privacidad y protección de datos personales | Datos mínimos (nombre y correo); borrado lógico; aviso de privacidad y derecho de supresión | `POST /api/v1/users/{id}/anonymize`, [privacidad.md](../privacidad.md) (aviso y procedimiento) | ✅ |
 | **5.37** Procedimientos operativos documentados | Instalación, variables y primer uso documentados | `README.md`, `.env.example`, `docs/instalacion-cliente.md`, `docs/manual-operacion.md` | ✅ |
 | **8.2** Derechos de acceso privilegiado | Funciones de administración exclusivas de ADMIN, todas auditadas | `UserController`, `audit_log` | ✅ |
 | **8.3** Restricción de acceso a la información | Cada inversionista solo ve sus simulaciones (404 a las ajenas) | `SimulationService.get` | ✅ |
-| **8.4** Acceso al código fuente | Repositorio privado o controlado y cambios vía PR | GitHub | 🟡 Falta protección de rama en `main` |
+| **8.4** Acceso al código fuente | Repositorio privado o controlado y cambios vía PR | Protección de `main`: PR obligatorio, 5 checks de CI requeridos y actualizados, sin *force push* ni borrado, también para administradores | ✅ |
 | **8.5** Autenticación segura | JWT de vida corta, rotación del refresh token, bloqueo por fuerza bruta, mensaje de error genérico, tiempo constante con correo inexistente | `AuthService` | ✅ |
 | **8.6** Gestión de la capacidad | Rate limiting por IP y usuario; carga medida con k6; métricas en Prometheus | `RateLimitFilter`, `ops/k6/simulations.js`, `/actuator/prometheus` (puerto interno) | ✅ |
 | **8.8** Gestión de vulnerabilidades técnicas | Escaneo de dependencias e imágenes | Dependabot semanal, Trivy en cada PR, OWASP Dependency-Check semanal (`security.yml`) | ✅ |
@@ -41,8 +41,8 @@ Estado: ✅ implementado · 🟡 parcial · ⬜ pendiente · ➖ responsabilidad
 | 5.19–5.22 Proveedores · 6.x Personas · 7.x Físicos | — | — | ➖ |
 
 ## Brechas (se convierten en tareas de la Fase Q en `task.md`)
-1. Protección de la rama `main` (PR obligatorio y CI requerido).
-2. Procedimiento de supresión definitiva de datos personales (Ley 1581).
+1. ~~Protección de la rama `main`~~ (cerrado en la Fase Q).
+2. ~~Procedimiento de supresión definitiva de datos personales~~ (cerrado en la Fase Q).
 3. ~~Alertas de seguridad al IT_MANAGER~~ (cerrado en la Fase 4).
 4. ~~Respaldos, TLS y manual de operación~~ (cerrado en la Fase 5).
 5. ~~Escaneo de vulnerabilidades y revisión ASVS~~ (cerrado en la Fase 6).

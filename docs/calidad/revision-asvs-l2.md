@@ -32,7 +32,7 @@ Estado: ✅ cumple · 🟡 parcial · ⬜ pendiente · N/A no aplica.
 | | 7.4.1 Errores genéricos con id de traza | RFC 7807 con `code` y `traceId`, sin trazas internas | ✅ |
 | | 7.2.1 Registrar eventos de autenticación | `audit_log` (login, bloqueo, reutilización) | ✅ |
 | **V8** Protección de datos | 8.1.1 Sin datos sensibles en caché | `Cache-Control: no-store` (cabeceras por defecto de Spring Security) | ✅ |
-| | 8.3.4 Datos personales identificados | Nombre y correo; supresión definitiva pendiente (Ley 1581) | 🟡 |
+| | 8.3.4 Datos personales identificados | Nombre y correo; supresión definitiva con `POST /api/v1/users/{id}/anonymize` ([privacidad.md](../privacidad.md)) | ✅ |
 | **V9** Comunicaciones | 9.1.1 TLS para todo el tráfico del cliente | Proxy TLS (Caddy) + `REQUIRE_HTTPS=true`: redirección a HTTPS y HSTS de 1 año | ✅ |
 | | 9.2.x Conexiones internas | Red interna de Docker sin puertos públicos (calc-engine, Postgres) | ✅ |
 | **V10** Código malicioso | 10.3.2 Integridad de componentes | Dependencias de Maven Central/PyPI con versión fija; imágenes base escaneadas | ✅ |
@@ -49,7 +49,7 @@ Estado: ✅ cumple · 🟡 parcial · ⬜ pendiente · N/A no aplica.
 
 ## Brechas abiertas
 1. **3.3.3**: el access token sigue válido hasta 15 min tras un cambio de rol (aceptado, R-12).
-2. **8.3.4**: procedimiento de supresión definitiva de datos personales (Fase Q).
+2. ~~**8.3.4**: supresión definitiva de datos personales~~ (cerrado en la Fase Q).
 3. El límite por IP usa `X-Forwarded-For`: el puerto 8080 solo debe ser accesible desde el proxy
    (firewall con 80/443 abiertos, como indica `instalacion-cliente.md`); si no, un atacante puede
    falsear su IP. El bloqueo por cuenta (5 intentos) sigue protegiendo en ese caso.

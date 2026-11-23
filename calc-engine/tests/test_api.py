@@ -1,3 +1,4 @@
+import pytest
 from fastapi.testclient import TestClient
 
 from app.main import app
@@ -44,3 +45,23 @@ def test_statistics_endpoint():
     ).json()
     assert body["count"] == 1
     assert body["total_profit"] == "2000.00"
+
+
+# Boundary values of market_variation_pct (29119-4): [-100, 100] accepted, just outside rejected
+@pytest.mark.parametrize(
+    ("variation", "status", "final_amount"),
+    [
+        ("100", 200, "3000000.00"),  # +100 % -> return +200 %
+        ("-100", 200, "0.00"),  # -100 % -> loss capped at capital
+        ("100.01", 422, None),
+        ("-100.01", 422, None),
+    ],
+)
+def test_returns_variation_boundaries(variation, status, final_amount):
+    response = client.post(
+        "/calculations/returns",
+        json={"initial_capital": "1000000", "market_variation_pct": variation},
+    )
+    assert response.status_code == status
+    if final_amount is not None:
+        assert response.json()["final_amount"] == final_amount

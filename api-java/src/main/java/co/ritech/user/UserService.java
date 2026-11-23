@@ -4,6 +4,7 @@ import java.time.Clock;
 import java.time.Instant;
 import java.util.UUID;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -31,6 +32,7 @@ public class UserService {
     private final PasswordEncoder passwordEncoder;
     private final AuditService audit;
     private final LicenseService license;
+    private final ApplicationEventPublisher events;
     private final Clock clock;
 
     public UserService(
@@ -39,12 +41,14 @@ public class UserService {
             PasswordEncoder passwordEncoder,
             AuditService audit,
             LicenseService license,
+            ApplicationEventPublisher events,
             Clock clock) {
         this.users = users;
         this.refreshTokens = refreshTokens;
         this.passwordEncoder = passwordEncoder;
         this.audit = audit;
         this.license = license;
+        this.events = events;
         this.clock = clock;
     }
 
@@ -128,6 +132,27 @@ public class UserService {
         user.softDelete(now);
         refreshTokens.revokeAllForUser(user.getId(), now);
         audit.record(actor.id(), "USER_DELETED", "USER", user.getId(), null);
+    }
+
+    /**
+     * Definitive suppression of personal data (Ley 1581 de 2012, habeas data). Name, e-mail and
+     * password are replaced, sessions revoked, and inbox and preferences deleted (UserAnonymized).
+     * Simulations stay without identity (statistics); the audit log is kept as a legal record.
+     * Also works on already deleted users. Idempotent.
+     */
+    @Transactional
+    public void anonymize(CurrentUser actor, UUID id) {
+        User user = users.findById(id).orElseThrow(() -> new UserNotFoundException(id));
+        if (user.isAnonymized()) {
+            return;
+        }
+        ensureNotLastActiveAdmin(user);
+        Instant now = clock.instant();
+        String unusablePassword = passwordEncoder.encode(UUID.randomUUID().toString());
+        user.anonymize(unusablePassword, now);
+        refreshTokens.revokeAllForUser(user.getId(), now);
+        events.publishEvent(new UserAnonymized(user.getId()));
+        audit.record(actor.id(), "USER_ANONYMIZED", "USER", user.getId(), null);
     }
 
     private void ensureNotLastActiveAdmin(User user) {

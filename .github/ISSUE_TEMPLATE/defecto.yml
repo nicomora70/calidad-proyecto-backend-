@@ -1,0 +1,53 @@
+name: Defecto
+description: Reportar un defecto (plan de pruebas ISO/IEC/IEEE 29119, §7)
+title: "[Defecto] "
+labels: ["defecto"]
+body:
+  - type: dropdown
+    id: severidad
+    attributes:
+      label: Severidad
+      description: Según docs/calidad/plan-pruebas-29119.md §7
+      options:
+        - Crítica — cálculo de dinero incorrecto o brecha de seguridad (bloquea el merge)
+        - Alta — una función principal no se puede usar (bloquea la entrega de la fase)
+        - Media — funciona, pero con un error recuperable
+        - Baja — cosmética o de documentación
+    validations:
+      required: true
+  - type: input
+    id: componente
+    attributes:
+      label: Componente y endpoint
+      placeholder: "api-java · POST /api/v1/simulations"
+    validations:
+      required: true
+  - type: textarea
+    id: pasos
+    attributes:
+      label: Pasos para reproducirlo
+      placeholder: |
+        1. Iniciar sesión como INVESTOR
+        2. ...
+    validations:
+      required: true
+  - type: textarea
+    id: esperado
+    attributes:
+      label: Resultado esperado y resultado obtenido
+    validations:
+      required: true
+  - type: input
+    id: traza
+    attributes:
+      label: traceId (cabecera X-Request-Id o campo traceId del error)
+  - type: input
+    id: requisito
+    attributes:
+      label: Requisito afectado (RF/RNF de la matriz 29148)
+      placeholder: RF-03
+  - type: textarea
+    id: prueba
+    attributes:
+      label: Prueba que lo cubrirá
+      description: Toda corrección entra con una prueba que falla antes del arreglo

@@ -54,7 +54,7 @@ producto para desarrolladores**:
 | Ausencia de fallos | Pruebas automatizadas que pasan en CI | 100 % en cada PR | GitHub Actions | ✅ |
 | Disponibilidad | Healthchecks de los 3 servicios | Presentes y usados por `depends_on` | `docker-compose.yml`, Actuator | ✅ |
 | Tolerancia a fallos | Dependencias externas con reintento y circuit breaker | 2/2 (calc-engine, Alpha Vantage) | `ResilientCall` + `ResilientCallTest` | ✅ |
-| Tolerancia a fallos | Fallos de la IA que revierten la simulación | 0 (las alertas son *best-effort*) | Diseño Fase 2 | ⬜ |
+| Tolerancia a fallos | Fallos de la IA que revierten la simulación | 0 (las alertas son *best-effort*) | `@TransactionalEventListener(AFTER_COMMIT)` + `@Async`; `providerFailureMarksAlertFailedWithoutThrowing` | ✅ |
 | Recuperabilidad | Respaldo diario y restauración probada | RPO ≤ 24 h, RTO ≤ 2 h | `pg-backup`; restauración verificada en cada CI | ✅ RPO 24 h |
 
 ### 2.6 Seguridad
@@ -92,7 +92,7 @@ producto para desarrolladores**:
 | Subcaracterística | Métrica | Meta | Evidencia | Estado |
 |---|---|---|---|---|
 | Restricción operativa | Modo solo lectura si la licencia vence | Sí | `LicenseInterceptor`, `LicenseFlowIT` | ✅ |
-| Identificación de riesgos / advertencia | Las salidas de IA y las proyecciones llevan aviso de "no es asesoría financiera" | 100 % | Fase 2 y Fase 5 | ⬜ |
+| Identificación de riesgos / advertencia | Las salidas de IA y las proyecciones llevan aviso de "no es asesoría financiera" | 100 % | Campo `disclaimer` en alertas (`AiAlertControllerTest`) y proyecciones (`InstallationFlowIT`); aviso legal del branding | ✅ |
 | A prueba de fallos | Pérdida máxima limitada al capital (el monto nunca es negativo) | Sí | `test_loss_is_capped_at_capital` | ✅ |
 
 ## 3. Conclusión de la evaluación (25040, etapa 5)
@@ -103,3 +103,4 @@ Se actualiza al cierre de cada fase con los datos del último CI de `main`.
 |---|---|---|---|---|---|
 | 2026-11-22 | 0.2.0 (Fase 1) | 28 | 4 | 6 | Funcionalidad crítica, seguridad y mantenibilidad cubiertas; faltan desempeño medido, recuperabilidad y el endurecimiento de la Fase 6 |
 | 2026-11-23 | 0.7.0 (Fase 6) | 34 | 4 | 2 | Endurecimiento: rate limiting, cabeceras, HTTPS, escaneo de vulnerabilidades, ASVS L2, métricas y carga medida con k6. Pendientes de la Fase Q: aviso de IA en todas las salidas y reversión ante fallos de IA |
+| 2026-11-23 | 0.7.0 (Fase Q) | 36 | 4 | 0 | Brechas de la Fase Q cerradas: valores límite, lock concurrente, tabla de roles, protección de `main`, plantillas de GitHub y supresión de datos (Ley 1581). Los 4 parciales son mejoras de alcance, no defectos |

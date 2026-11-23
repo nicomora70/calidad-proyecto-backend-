@@ -16,6 +16,9 @@ import jakarta.persistence.Table;
 @Table(name = "users")
 public class User {
 
+    static final String ANONYMIZED_NAME = "Titular suprimido";
+    static final String ANONYMIZED_EMAIL_DOMAIN = "@anonymized.invalid";
+
     @Id
     private UUID id;
 
@@ -121,6 +124,23 @@ public class User {
     public void changeRole(Role role, Instant now) {
         this.role = role;
         updatedAt = now;
+    }
+
+    /** Ley 1581 (habeas data): irreversible removal of the identifying data; the row stays for history. */
+    public void anonymize(String randomPasswordHash, Instant now) {
+        fullName = ANONYMIZED_NAME;
+        email = "deleted-" + id + ANONYMIZED_EMAIL_DOMAIN;
+        passwordHash = randomPasswordHash;
+        mustChangePassword = false;
+        active = false;
+        if (deletedAt == null) {
+            deletedAt = now;
+        }
+        updatedAt = now;
+    }
+
+    public boolean isAnonymized() {
+        return email.endsWith(ANONYMIZED_EMAIL_DOMAIN);
     }
 
     public void softDelete(Instant now) {

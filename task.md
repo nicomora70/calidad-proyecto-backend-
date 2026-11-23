@@ -94,16 +94,16 @@
 - [x] Mapeo del proceso **ISO/IEC 29110** (gestión del proyecto e implementación del software): `proceso-29110.md`
 - [x] Registro de riesgos **ISO 31000**: `riesgos-31000.md`
 
-### Brechas por cerrar
-- [ ] **(P)** Pruebas de valores límite faltantes (29119-4): capital = 100.000,00 aceptado; contraseña de 7, 8, 72 y 73 caracteres; variación de ±100 en el motor
-- [ ] Prueba concurrente del advisory lock de mercado (RF-07)
-- [ ] Completar la tabla de decisión de roles: IT_MANAGER en `/api/audit` y en `/api/users/**`
-- [ ] **(P)** Protección de la rama `main`: PR obligatorio y los checks de CI requeridos (27001 A.8.4 y A.8.32)
-- [ ] Plantillas de *issue* (defecto con severidad) y de PR (requisito y prueba) en `.github/`
-- [ ] Procedimiento de supresión definitiva de datos personales y aviso de privacidad (Ley 1581, 27001 A.5.34)
+### Brechas por cerrar ✅
+- [x] **(P)** Pruebas de valores límite faltantes (29119-4): capital = 100.000,00 aceptado; contraseña de 7, 8, 72 y 73 caracteres; variación de ±100 en el motor
+- [x] Prueba concurrente del advisory lock de mercado (RF-07): `MarketFetchLockIT`
+- [x] Completar la tabla de decisión de roles: IT_MANAGER en `/api/v1/audit` y en `/api/v1/users/**` (`RoleAuthorizationTest`)
+- [x] **(P)** Protección de la rama `main`: PR obligatorio y los checks de CI requeridos (27001 A.8.4 y A.8.32)
+- [x] Plantillas de *issue* (defecto con severidad) y de PR (requisito y prueba) en `.github/`
+- [x] Procedimiento de supresión definitiva de datos personales y aviso de privacidad (Ley 1581, 27001 A.5.34): `POST /api/v1/users/{id}/anonymize`, `docs/privacidad.md`
 - [x] Metas de desempeño medidas con k6 (25010 §2.2), junto con la Fase 6
-- [ ] Respaldo y restauración probados (25010 recuperabilidad; 27001 A.8.13), junto con la Fase 5
-- [ ] Actualizar al cierre de cada fase: evaluación 25010 (§3), informe de pruebas (§8), matriz de trazabilidad y registro de riesgos
+- [x] Respaldo y restauración probados (25010 recuperabilidad; 27001 A.8.13), junto con la Fase 5
+- [x] Actualizar al cierre de cada fase: evaluación 25010 (§3), informe de pruebas (§8), matriz de trazabilidad y registro de riesgos
 
 ## Fase 2 — IA integrada ✅
 

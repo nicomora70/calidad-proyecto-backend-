@@ -140,4 +140,26 @@ class SimulationServiceTest {
         verify(audit).record(eq(userId), eq("SIMULATION_CREATED"), eq("SIMULATION"), eq(result.getId()), any());
         verify(aiAlerts).requestFor(result);
     }
+
+    /** Boundary value (29119-4): exactly the minimum capital is valid. */
+    @Test
+    void acceptsCapitalExactlyAtMinimum() {
+        var quote = new MarketQuote("QQQ", LocalDate.of(2026, 11, 20), BigDecimal.ONE, "FIXED");
+        when(marketService.currentVariation()).thenReturn(new MarketVariation(quote, now));
+        var capital = new BigDecimal("100000.00");
+        when(calcEngine.calculateReturn(capital, BigDecimal.ONE))
+                .thenReturn(new ReturnResult(
+                        capital,
+                        BigDecimal.ONE,
+                        new BigDecimal("2"),
+                        new BigDecimal("2.0000"),
+                        new BigDecimal("102000.00"),
+                        new BigDecimal("2000.00"),
+                        false));
+
+        Simulation result = service.simulate(UUID.randomUUID(), capital);
+
+        assertThat(result.getInitialCapital()).isEqualByComparingTo("100000");
+        assertThat(result.getFinalAmount()).isEqualByComparingTo("102000");
+    }
 }

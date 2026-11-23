@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.time.Clock;
 import java.util.UUID;
 
+import org.springframework.context.event.EventListener;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -16,6 +17,7 @@ import co.ritech.license.LicenseModel.Module;
 import co.ritech.license.LicenseService;
 import co.ritech.notification.NotificationEnums.NotificationChannel;
 import co.ritech.notification.NotificationEnums.NotificationType;
+import co.ritech.user.UserAnonymized;
 
 /** Creates notifications according to each user's preferences, and serves the in-app inbox. */
 @Service
@@ -47,6 +49,13 @@ public class NotificationService {
         public NotificationNotFoundException(UUID id) {
             super(HttpStatus.NOT_FOUND, "NOTIFICATION_NOT_FOUND", "Notification " + id + " does not exist");
         }
+    }
+
+    /** Ley 1581: an anonymized user loses its inbox and preferences (same transaction). */
+    @EventListener
+    public void onUserAnonymized(UserAnonymized event) {
+        repository.deleteAllForUser(event.userId());
+        preferences.deleteById(event.userId());
     }
 
     /**

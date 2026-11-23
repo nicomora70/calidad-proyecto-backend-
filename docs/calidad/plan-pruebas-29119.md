@@ -35,11 +35,12 @@ ISO/IEC/IEEE 29119-4 y el proceso (planificar → monitorear y controlar → com
 | Bloqueo por intentos | 1–4 fallos · 5.º fallo | 5.º intento bloquea | `fifthFailedAttemptLocksAccount`, `accountLocksAfterFiveFailedAttempts` |
 | Rango de fechas | `from` ≤ `to` · `from` > `to` | mismo día (inclusivo) · día siguiente | `DateRangeTest` |
 | Rate limiting | login por IP · autenticada por usuario · anónima por IP · OPTIONS y fuera de `/api` · desactivado | N-ésima petición ✅ · N+1 ❌ 429 | `RateLimitFilterTest` |
+| Capital mínimo (límite válido) | = 100.000,00 | 100.000,00 ✅ | `acceptsCapitalExactlyAtMinimum` |
+| Longitud de contraseña | < 8 · 8..72 · > 72 | 7 ❌ · 8 ✅ · 72 ✅ · 73 ❌ | `PasswordPolicyTest` |
+| Variación en el motor | < −100 · [−100, 100] · > 100 | −100,01 ❌ · −100 ✅ · 100 ✅ · 100,01 ❌ | `test_returns_variation_boundaries` |
 
-**Brechas detectadas** (a cubrir, Fase Q):
-- Capital exactamente igual a 100.000,00 (límite válido).
-- Contraseña de 7, 8, 72 y 73 caracteres.
-- Variación exactamente en ±100 en el motor.
+Las brechas detectadas en la Fase 1 (capital = 100.000,00, contraseñas de 7/8/72/73 y variación ±100)
+quedaron cerradas en la Fase Q.
 
 ### 4.2 Tabla de decisión — autorización por rol
 | Endpoint | Anónimo | INVESTOR | IT_MANAGER | ADMIN | Prueba |
@@ -48,8 +49,8 @@ ISO/IEC/IEEE 29119-4 y el proceso (planificar → monitorear y controlar → com
 | `GET /api/v1/simulations` | 401 | 403 | 403 | 200 | `SimulationControllerTest`, `InstallationFlowIT` |
 | `GET /api/v1/simulations/{id}` | 401 | 200 si es suya, 404 si no | 404 | 200 | `SimulationServiceTest` |
 | `GET /api/v1/dashboard/statistics` | 401 | 403 | 403 | 200 | `InstallationFlowIT`, smoke test |
-| `/api/v1/users/**` | 401 | 403 | 403 | 200 | `InstallationFlowIT` (parcial) |
-| `GET /api/v1/audit` | 401 | 403 | 200 | 200 | `InstallationFlowIT` (solo ADMIN) |
+| `/api/v1/users/**` | 401 | 403 | 403 | 200 | `RoleAuthorizationTest`, `InstallationFlowIT` |
+| `GET /api/v1/audit` | 401 | 403 | 200 | 200 | `RoleAuthorizationTest` |
 
 ### 4.3 Transición de estados — sesión y cuenta
 ```
@@ -87,3 +88,5 @@ Cada defecto se registra como *issue* de GitHub con su severidad, los pasos para
 |---|---|---|---|---|---|---|---|
 | 2026-11-22 | `fase-1-autenticacion` (PR #1) | 27/27 | 5/5 | 14/14 | ✅ | reporte JaCoCo | Aprobado |
 | 2026-11-22 | `fase-1-pendientes` (local) | 50/50 | omitidas sin Docker | 14/14 | — | ≥ 80 % ✅ | Pendiente de CI |
+| 2026-11-23 | `fase-6-endurecimiento` (PR #9) | 159/159 | 8/8 | 44/44 | ✅ (k6 p95 58 ms) | ≥ 80 % ✅ | Aprobado |
+| 2026-11-23 | `fase-q-brechas` (local) | 180/180 | 9 (en CI) | 48/48 | en CI | ≥ 80 % ✅ | Pendiente de CI |
