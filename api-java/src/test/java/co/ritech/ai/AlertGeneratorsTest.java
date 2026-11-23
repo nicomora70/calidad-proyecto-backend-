@@ -2,6 +2,7 @@ package co.ritech.ai;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
@@ -15,6 +16,11 @@ class AlertGeneratorsTest {
     private final ObjectMapper mapper = new ObjectMapper();
 
     private static AlertContext context(String variation, String returnPct, String finalAmount, String profit) {
+        return context(variation, returnPct, finalAmount, profit, List.of("Tech stocks rally (Bullish)"));
+    }
+
+    private static AlertContext context(
+            String variation, String returnPct, String finalAmount, String profit, List<String> headlines) {
         return new AlertContext(
                 "QQQ",
                 LocalDate.of(2026, 11, 20),
@@ -24,7 +30,8 @@ class AlertGeneratorsTest {
                 new BigDecimal("1000000.00"),
                 "COP",
                 new BigDecimal(finalAmount),
-                new BigDecimal(profit));
+                new BigDecimal(profit),
+                headlines);
     }
 
     @Test
@@ -54,7 +61,17 @@ class AlertGeneratorsTest {
     @Test
     void promptIncludesSimulationData() {
         String prompt = AlertPrompt.render(context("1.5", "3", "1030000.00", "30000.00"));
-        assertThat(prompt).contains("1.5 %").contains("1030000.00 COP").doesNotContain("{{");
+        assertThat(prompt)
+                .contains("1.5 %")
+                .contains("1030000.00 COP")
+                .contains("- Tech stocks rally (Bullish)")
+                .doesNotContain("{{");
+    }
+
+    @Test
+    void promptSaysWhenThereAreNoNews() {
+        String prompt = AlertPrompt.render(context("1.5", "3", "1030000.00", "30000.00", List.of()));
+        assertThat(prompt).contains("Sin noticias recientes disponibles");
     }
 
     @Test

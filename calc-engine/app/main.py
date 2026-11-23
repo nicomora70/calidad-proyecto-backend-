@@ -6,16 +6,19 @@ from dataclasses import asdict
 from fastapi import FastAPI
 
 from app.calculations.returns import calculate_return
+from app.calculations.sentiment import calculate_sentiment
 from app.calculations.statistics import SimulationSample, calculate_statistics
 from app.logging_config import RequestIdMiddleware, configure_logging
 from app.schemas import (
     ReturnRequest,
     ReturnResponse,
+    SentimentRequest,
+    SentimentResponse,
     StatisticsRequest,
     StatisticsResponse,
 )
 
-app = FastAPI(title="RiTech calc-engine", version="0.2.0")
+app = FastAPI(title="RiTech calc-engine", version="0.3.0")
 app.add_middleware(RequestIdMiddleware, logger=configure_logging())
 
 
@@ -34,3 +37,8 @@ def returns(request: ReturnRequest) -> ReturnResponse:
 def statistics(request: StatisticsRequest) -> StatisticsResponse:
     samples = [SimulationSample(s.initial_capital, s.return_pct) for s in request.samples]
     return StatisticsResponse(**asdict(calculate_statistics(samples)))
+
+
+@app.post("/calculations/sentiment", response_model=SentimentResponse)
+def sentiment(request: SentimentRequest) -> SentimentResponse:
+    return SentimentResponse(**asdict(calculate_sentiment(request.scores)))

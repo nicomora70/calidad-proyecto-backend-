@@ -39,6 +39,7 @@ public final class TestFixtures {
                         new BigDecimal("5"),
                         new BigDecimal("0.30"),
                         new BigDecimal("2.50")),
+                new RitechProperties.News("fixed", "QQQ", "-", 4, false, 5, Duration.ofHours(48)),
                 ZoneId.of("America/Bogota"));
     }
 }

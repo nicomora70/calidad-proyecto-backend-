@@ -5,14 +5,17 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentMatchers;
 import org.springframework.context.ApplicationEventPublisher;
 
 import co.ritech.TestFixtures;
+import co.ritech.news.NewsService;
 import co.ritech.simulation.Simulation;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -27,6 +30,7 @@ class AiAlertServiceTest {
     private final Instant now = Instant.parse("2026-11-20T15:00:00Z");
     private AiAlertRepository repository;
     private ApplicationEventPublisher events;
+    private NewsService news;
     private FakeGenerator generator;
     private AiAlertService service;
 
@@ -55,11 +59,13 @@ class AiAlertServiceTest {
     void setUp() {
         repository = mock(AiAlertRepository.class);
         events = mock(ApplicationEventPublisher.class);
+        news = mock(NewsService.class);
+        when(news.recentHeadlines()).thenReturn(List.of("Tech rally (Bullish)"));
         generator = new FakeGenerator();
         when(repository.save(any(AiAlert.class))).thenAnswer(inv -> inv.getArgument(0));
         when(repository.spentSince(any())).thenReturn(BigDecimal.ZERO);
         service = new AiAlertService(
-                repository, generator, events, TestFixtures.properties(), Clock.fixed(now, ZoneOffset.UTC));
+                repository, generator, events, news, TestFixtures.properties(), Clock.fixed(now, ZoneOffset.UTC));
     }
 
     private static Simulation simulation() {
@@ -84,7 +90,7 @@ class AiAlertServiceTest {
     }
 
     private void generate(AiAlert alert) {
-        service.generate(new AiAlertRequested(alert.getId(), AlertContext.from(simulation())));
+        service.generate(new AiAlertRequested(alert.getId(), AlertContext.from(simulation(), List.of())));
     }
 
     @Test
@@ -94,7 +100,9 @@ class AiAlertServiceTest {
         service.requestFor(simulation);
 
         verify(repository).save(any(AiAlert.class));
-        verify(events).publishEvent(any(AiAlertRequested.class));
+        verify(events)
+                .publishEvent(ArgumentMatchers.<AiAlertRequested>argThat(
+                        e -> e.context().headlines().equals(List.of("Tech rally (Bullish)"))));
     }
 
     @Test

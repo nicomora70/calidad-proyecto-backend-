@@ -63,11 +63,15 @@ Una por simulación (`simulation_id` único), con `user_id` para listar las prop
 `prompt_tokens`, `completion_tokens`, `cost_usd NUMERIC(10,6)`, `failure_reason`,
 `created_at` y `completed_at`. El índice `(status, created_at)` sirve para sumar el gasto del mes.
 
+### news_articles (V4)
+`url` (única: deduplicación), `title`, `summary`, `source`, `published_at`,
+`sentiment_score NUMERIC(6,4)` en [−1, 1] (puede ser nulo), `sentiment_label`, `fetched_at`.
+Índice por `published_at DESC` para el feed y para los titulares de la IA.
+
 ## Tablas planeadas
 
 | Migración | Tabla | Propósito |
 |---|---|---|
-| V4 (Fase 3) | `news_articles` | url (única), title, summary, source, published_at, sentiment_score, sentiment_label |
 | V5 (Fase 4) | `notifications` | user_id, type, channel, title, body, read_at, sent_at, status |
 | V5 (Fase 4) | `notification_preferences` | user_id, email_enabled, in_app_enabled, variation_threshold_pct |
 | V6 (Fase 5) | `license` | company_name, max_users, modules, expires_at, signature, loaded_at |

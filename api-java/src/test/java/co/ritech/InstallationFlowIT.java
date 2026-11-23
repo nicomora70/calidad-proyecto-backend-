@@ -23,6 +23,7 @@ import com.jayway.jsonpath.JsonPath;
 
 import co.ritech.engine.CalcEngineClient;
 import co.ritech.engine.CalcEngineClient.ReturnResult;
+import co.ritech.engine.CalcEngineClient.SentimentResult;
 import co.ritech.engine.CalcEngineClient.StatisticsResult;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -84,6 +85,9 @@ class InstallationFlowIT {
                     finalAmount.subtract(capital).setScale(2),
                     false);
         });
+        when(calcEngine.calculateSentiment(any()))
+                .thenAnswer(inv -> new SentimentResult(
+                        ((java.util.List<?>) inv.getArgument(0)).size(), BigDecimal.ZERO, "Neutral", 0, 0, 0));
         when(calcEngine.calculateStatistics(any()))
                 .thenAnswer(inv -> new StatisticsResult(
                         ((java.util.List<?>) inv.getArgument(0)).size(),
@@ -200,6 +204,29 @@ class InstallationFlowIT {
             Thread.sleep(100);
         }
         return status;
+    }
+
+    @Test
+    void newsAreIngestedOnStartupAndDeduplicated() throws Exception {
+        String adminToken = adminToken();
+
+        // The fixed provider ran on startup: 3 sample articles, newest first
+        mvc.perform(get("/api/news").header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.page.totalElements").value(3))
+                .andExpect(jsonPath("$.content[0].title").value("Tech stocks lift the Nasdaq 100 on strong earnings"));
+        mvc.perform(get("/api/news").param("sentiment", "neutral").header("Authorization", "Bearer " + adminToken))
+                .andExpect(jsonPath("$.page.totalElements").value(1));
+
+        // A manual refresh finds the same URLs and inserts nothing
+        mvc.perform(post("/api/news/refresh").header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.fetched").value(3))
+                .andExpect(jsonPath("$.inserted").value(0));
+
+        mvc.perform(get("/api/news/sentiment").header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.sentiment.label").exists());
     }
 
     @Test

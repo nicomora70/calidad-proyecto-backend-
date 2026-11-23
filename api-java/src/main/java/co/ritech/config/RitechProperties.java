@@ -21,6 +21,7 @@ public record RitechProperties(
         Cors cors,
         Security security,
         Ai ai,
+        News news,
         @DefaultValue("America/Bogota") ZoneId timezone) {
 
     public record Simulation(
@@ -71,4 +72,16 @@ public record RitechProperties(
             @DefaultValue("5") BigDecimal monthlyBudgetUsd,
             @DefaultValue("0") BigDecimal inputPricePerMtok,
             @DefaultValue("0") BigDecimal outputPricePerMtok) {}
+
+    public record News(
+            /* fixed (sample feed) | alphavantage (shares the market API key) */
+            @DefaultValue("fixed") String provider,
+            @DefaultValue("QQQ") String tickers,
+            @DefaultValue("0 0 */6 * * *") String refreshCron,
+            /* Alpha Vantage free plan: 25 calls/day shared with market data */
+            @DefaultValue("4") int maxDailyCalls,
+            @DefaultValue("true") boolean refreshOnStartup,
+            /* Headlines given to the AI prompt and how far back they may go */
+            @DefaultValue("5") int alertHeadlines,
+            @DefaultValue("48h") Duration alertWindow) {}
 }

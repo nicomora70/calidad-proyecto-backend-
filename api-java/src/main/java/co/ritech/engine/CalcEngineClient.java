@@ -51,6 +51,10 @@ public class CalcEngineClient {
         return post("/calculations/statistics", new StatisticsRequest(samples), StatisticsResult.class);
     }
 
+    public SentimentResult calculateSentiment(List<BigDecimal> scores) {
+        return post("/calculations/sentiment", new SentimentRequest(scores), SentimentResult.class);
+    }
+
     /** Transient failures are retried with backoff; repeated failures open the circuit. */
     private <T> T post(String path, Object body, Class<T> type) {
         T result;
@@ -98,4 +102,10 @@ public class CalcEngineClient {
             BigDecimal worstReturnPct,
             BigDecimal maxDrawdownPct,
             BigDecimal winRatePct) {}
+
+    public record SentimentRequest(List<BigDecimal> scores) {}
+
+    @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
+    public record SentimentResult(
+            int count, BigDecimal meanScore, String label, int bullishCount, int neutralCount, int bearishCount) {}
 }

@@ -117,14 +117,14 @@
 - [x] Pruebas con un proveedor falso; nada de llamadas reales en CI
 - [ ] (Opcional) Asistente de preguntas sobre el historial propio: `POST /api/ai/ask`
 
-## Fase 3 — Noticias
+## Fase 3 — Noticias ✅
 
-- [ ] Interfaz `NewsProvider` con implementación de Alpha Vantage `NEWS_SENTIMENT` (tickers QQQ y NASDAQ)
-- [ ] Tarea `@Scheduled` cada N horas (`NEWS_REFRESH_CRON`) que respeta la cuota diaria
-- [ ] Migración V4 `news_articles`, deduplicada por URL
-- [ ] `GET /api/news` paginado, con filtros por fecha y sentimiento
-- [ ] Indicador de sentimiento del día, agregado por calc-engine (`POST /calculations/sentiment`)
-- [ ] La IA (Fase 2) toma las noticias de la BD en vez de llamar a la API cada vez
+- [x] Interfaz `NewsProvider` con Alpha Vantage `NEWS_SENTIMENT` (ticker QQQ como proxy del NASDAQ 100) y un proveedor `fixed` para demo y CI (`NEWS_PROVIDER`)
+- [x] Tarea `@Scheduled` (`NEWS_REFRESH_CRON`, cada 6 h por defecto) y carga al arrancar; tope diario de llamadas (`NEWS_MAX_DAILY_CALLS`) para no agotar la cuota compartida con el mercado
+- [x] Migración V4 `news_articles`, deduplicada por URL
+- [x] `GET /api/news` paginado, con filtros por fecha y sentimiento; `POST /api/news/refresh` (ADMIN)
+- [x] Indicador de sentimiento del día, agregado por calc-engine (`POST /calculations/sentiment`) y expuesto en `GET /api/news/sentiment`
+- [x] La IA toma los titulares de la BD (prompt `alert-v2`) en vez de llamar a la API cada vez
 
 ## Fase 4 — Notificaciones
 
