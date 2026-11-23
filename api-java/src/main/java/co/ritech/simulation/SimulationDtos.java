@@ -11,13 +11,12 @@ import jakarta.validation.constraints.Positive;
 
 public final class SimulationDtos {
 
-    private SimulationDtos() {
-    }
+    private SimulationDtos() {}
 
     /** The owner is always the authenticated user (taken from the access token). */
     public record CreateSimulationRequest(
-            @NotNull @Positive @Digits(integer = 16, fraction = 2) BigDecimal initialCapital) {
-    }
+            @NotNull @Positive @Digits(integer = 16, fraction = 2)
+            BigDecimal initialCapital) {}
 
     public record SimulationResponse(
             UUID id,
@@ -34,9 +33,18 @@ public final class SimulationDtos {
             Instant createdAt) {
 
         public static SimulationResponse from(Simulation s) {
-            return new SimulationResponse(s.getId(), s.getUserId(), s.getInitialCapital(),
-                    s.getCurrency(), s.getSymbol(), s.getMarketDate(), s.getMarketVariationPct(),
-                    s.getLeverage(), s.getReturnPct(), s.getFinalAmount(), s.getProfit(),
+            return new SimulationResponse(
+                    s.getId(),
+                    s.getUserId(),
+                    s.getInitialCapital(),
+                    s.getCurrency(),
+                    s.getSymbol(),
+                    s.getMarketDate(),
+                    s.getMarketVariationPct(),
+                    s.getLeverage(),
+                    s.getReturnPct(),
+                    s.getFinalAmount(),
+                    s.getProfit(),
                     s.getCreatedAt());
         }
     }

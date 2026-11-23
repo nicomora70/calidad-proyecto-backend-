@@ -29,8 +29,12 @@ public class BootstrapAdminInitializer implements ApplicationRunner {
     private final RitechProperties.Security settings;
     private final Clock clock;
 
-    public BootstrapAdminInitializer(UserRepository users, PasswordEncoder passwordEncoder,
-                                     AuditService audit, RitechProperties properties, Clock clock) {
+    public BootstrapAdminInitializer(
+            UserRepository users,
+            PasswordEncoder passwordEncoder,
+            AuditService audit,
+            RitechProperties properties,
+            Clock clock) {
         this.users = users;
         this.passwordEncoder = passwordEncoder;
         this.audit = audit;
@@ -52,11 +56,16 @@ public class BootstrapAdminInitializer implements ApplicationRunner {
             return;
         }
         if (password.length() < UserDtos.PASSWORD_MIN) {
-            throw new IllegalStateException("BOOTSTRAP_ADMIN_PASSWORD must have at least "
-                    + UserDtos.PASSWORD_MIN + " characters");
+            throw new IllegalStateException(
+                    "BOOTSTRAP_ADMIN_PASSWORD must have at least " + UserDtos.PASSWORD_MIN + " characters");
         }
-        User admin = users.save(new User(settings.bootstrapAdminName(), email, Role.ADMIN,
-                passwordEncoder.encode(password), true, clock.instant()));
+        User admin = users.save(new User(
+                settings.bootstrapAdminName(),
+                email,
+                Role.ADMIN,
+                passwordEncoder.encode(password),
+                true,
+                clock.instant()));
         audit.record(null, "BOOTSTRAP_ADMIN_CREATED", "USER", admin.getId(), null);
         log.info("Bootstrap administrator {} created; password change required on first login", admin.getEmail());
     }

@@ -14,10 +14,12 @@ def test_empty_samples_return_zeros():
 
 
 def test_aggregates():
-    s = calculate_statistics([
-        SimulationSample(Decimal("100000"), Decimal("4")),
-        SimulationSample(Decimal("300000"), Decimal("-2")),
-    ])
+    s = calculate_statistics(
+        [
+            SimulationSample(Decimal("100000"), Decimal("4")),
+            SimulationSample(Decimal("300000"), Decimal("-2")),
+        ]
+    )
     assert s.count == 2
     assert s.total_capital == Decimal("400000.00")
     assert s.total_profit == Decimal("-2000.00")

@@ -17,6 +17,8 @@ jobs:
         with:
           python-version: "3.12"
       - run: pip install -r requirements-dev.txt
+      - name: Lint (ruff)
+        run: ruff check . && ruff format --check .
       - run: pytest -q
 
   api-java:
@@ -31,7 +33,8 @@ jobs:
           distribution: temurin
           java-version: "21"
           cache: maven
-      # Unit tests + Testcontainers integration tests (*IT) + JaCoCo report
+      # Spotless format check, unit tests, Testcontainers integration tests (*IT),
+      # JaCoCo gate (services >= 80 % lines) and merged coverage report
       - run: chmod +x mvnw && ./mvnw -B verify
       - name: Coverage report
         if: always()

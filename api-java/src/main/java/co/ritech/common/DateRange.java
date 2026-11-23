@@ -17,7 +17,8 @@ public record DateRange(Instant from, Instant to) {
             throw new InvalidDateRangeException();
         }
         Instant from = fromDate == null ? null : fromDate.atStartOfDay(zone).toInstant();
-        Instant to = toDate == null ? null : toDate.plusDays(1).atStartOfDay(zone).toInstant();
+        Instant to =
+                toDate == null ? null : toDate.plusDays(1).atStartOfDay(zone).toInstant();
         return new DateRange(from, to);
     }
 

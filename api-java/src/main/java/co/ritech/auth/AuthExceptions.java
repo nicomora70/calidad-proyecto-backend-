@@ -8,8 +8,7 @@ import co.ritech.common.BusinessException;
 
 public final class AuthExceptions {
 
-    private AuthExceptions() {
-    }
+    private AuthExceptions() {}
 
     /** Deliberately generic: never reveals whether the email exists. */
     public static class InvalidCredentialsException extends BusinessException {
@@ -22,8 +21,7 @@ public final class AuthExceptions {
         private final Instant lockedUntil;
 
         public AccountLockedException(Instant lockedUntil) {
-            super(HttpStatus.LOCKED, "ACCOUNT_LOCKED",
-                    "Too many failed attempts. Try again after " + lockedUntil);
+            super(HttpStatus.LOCKED, "ACCOUNT_LOCKED", "Too many failed attempts. Try again after " + lockedUntil);
             this.lockedUntil = lockedUntil;
         }
 

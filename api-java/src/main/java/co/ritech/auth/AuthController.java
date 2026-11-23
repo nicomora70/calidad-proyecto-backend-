@@ -50,8 +50,8 @@ public class AuthController {
     @PostMapping("/change-password")
     @SecurityRequirement(name = "bearer")
     @Operation(summary = "Change own password; revokes other sessions and returns new tokens")
-    public TokenResponse changePassword(@Parameter(hidden = true) CurrentUser user,
-                                        @Valid @RequestBody ChangePasswordRequest request) {
+    public TokenResponse changePassword(
+            @Parameter(hidden = true) CurrentUser user, @Valid @RequestBody ChangePasswordRequest request) {
         return service.changePassword(user, request.currentPassword(), request.newPassword());
     }
 }
