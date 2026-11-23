@@ -3,8 +3,8 @@ package co.ritech;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.nio.charset.StandardCharsets;
-import java.time.Instant;
 import java.time.LocalDate;
+import java.time.ZoneOffset;
 import java.util.UUID;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -273,12 +273,14 @@ class InstallationFlowIT {
     void projectionsExportsAndBranding() throws Exception {
         String adminToken = adminToken();
 
-        // Five stored market days (past dates, so they never clash with today's fixed variation)
+        // Five stored market days in the past. fetchedAt is also in the past: with "now" they would
+        // become the fresh cached variation and change the result of the other tests (shared DB).
         for (int i = 1; i <= 5; i++) {
             var day = LocalDate.of(2026, 1, i + 4);
             if (marketVariations.findBySymbolAndMarketDate("QQQ", day).isEmpty()) {
-                marketVariations.save(
-                        new MarketVariation(new MarketQuote("QQQ", day, new BigDecimal(i - 3), "TEST"), Instant.now()));
+                marketVariations.save(new MarketVariation(
+                        new MarketQuote("QQQ", day, new BigDecimal(i - 3), "TEST"),
+                        day.atTime(21, 0).toInstant(ZoneOffset.UTC)));
             }
         }
         postJson("/api/projections", adminToken, "{\"initialCapital\": 1000000, \"horizonDays\": 20}")
