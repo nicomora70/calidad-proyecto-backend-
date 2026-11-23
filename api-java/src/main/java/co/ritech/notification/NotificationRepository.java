@@ -34,6 +34,10 @@ public interface NotificationRepository extends JpaRepository<Notification, UUID
             + " and n.readAt is null")
     int markAllRead(@Param("userId") UUID userId, @Param("now") Instant now);
 
+    @Modifying
+    @Query("delete from Notification n where n.userId = :userId")
+    int deleteAllForUser(@Param("userId") UUID userId);
+
     List<Notification> findByChannelAndStatusAndNextAttemptAtLessThanEqualOrderByNextAttemptAt(
             NotificationChannel channel, DeliveryStatus status, Instant now, Pageable pageable);
 }

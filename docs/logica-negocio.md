@@ -222,8 +222,15 @@ El archivo `ritech-license-v1` trae el `payload` (JSON en base64 con empresa, pl
 
 ### CU-09 Auditoría
 Se registra: inicio de sesión (con éxito y fallido), creación, eliminación y cambio de rol
-de usuarios, simulaciones, carga de licencia y cambios de configuración. El registro solo
+y supresión (`USER_ANONYMIZED`) de usuarios, simulaciones, carga de licencia y cambios de configuración. El registro solo
 admite inserciones y puede exportarse a CSV (paquete Empresarial).
+
+### CU-11 Supresión de datos personales (Ley 1581)
+El ADMIN ejecuta `POST /api/v1/users/{id}/anonymize` cuando un titular ejerce el derecho de
+supresión: se reemplazan nombre, correo y contraseña, se revocan las sesiones y se borran la
+bandeja y las preferencias. Las simulaciones quedan sin identidad y la auditoría se conserva.
+Es irreversible e idempotente; el último ADMIN activo no se puede suprimir (`409 LAST_ADMIN`).
+Procedimiento completo en [privacidad.md](privacidad.md).
 
 ## 6. Catálogo de errores (RFC 7807)
 

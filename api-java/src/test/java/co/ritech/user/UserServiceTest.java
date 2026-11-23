@@ -9,6 +9,7 @@ import java.util.UUID;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 import co.ritech.TestFixtures;
@@ -25,6 +26,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -34,6 +36,7 @@ class UserServiceTest {
     private final CurrentUser actor = new CurrentUser(UUID.randomUUID(), "admin@example.com", Role.ADMIN, false);
     private UserRepository users;
     private RefreshTokenRepository tokens;
+    private final ApplicationEventPublisher events = mock(ApplicationEventPublisher.class);
     private UserService service;
     private User admin;
 
@@ -48,6 +51,7 @@ class UserServiceTest {
                 new BCryptPasswordEncoder(4),
                 mock(AuditService.class),
                 TestFixtures.allModules(),
+                events,
                 Clock.fixed(now, ZoneOffset.UTC));
         admin = new User("Admin", "admin@example.com", Role.ADMIN, "hash", false, now);
         when(users.findByIdAndDeletedAtIsNull(admin.getId())).thenReturn(Optional.of(admin));
@@ -152,5 +156,44 @@ class UserServiceTest {
         assertThat(admin.getDeletedAt()).isEqualTo(now);
         assertThat(admin.isActive()).isFalse();
         verify(tokens).revokeAllForUser(eq(admin.getId()), any());
+    }
+
+    @Test
+    void anonymizeRemovesIdentityRevokesSessionsAndNotifiesModules() {
+        User investor = new User("Ana Pérez", "ana@example.com", Role.INVESTOR, "hash", false, now);
+        when(users.findById(investor.getId())).thenReturn(Optional.of(investor));
+
+        service.anonymize(actor, investor.getId());
+
+        assertThat(investor.getFullName()).isEqualTo(User.ANONYMIZED_NAME);
+        assertThat(investor.getEmail()).isEqualTo("deleted-" + investor.getId() + "@anonymized.invalid");
+        assertThat(investor.getPasswordHash()).isNotEqualTo("hash");
+        assertThat(investor.isActive()).isFalse();
+        assertThat(investor.getDeletedAt()).isEqualTo(now);
+        assertThat(investor.isAnonymized()).isTrue();
+        verify(tokens).revokeAllForUser(eq(investor.getId()), any());
+        verify(events).publishEvent(new UserAnonymized(investor.getId()));
+    }
+
+    @Test
+    void anonymizeIsIdempotentAndWorksOnDeletedUsers() {
+        User investor = new User("Ana", "ana@example.com", Role.INVESTOR, "hash", false, now);
+        investor.softDelete(now.minusSeconds(60));
+        when(users.findById(investor.getId())).thenReturn(Optional.of(investor));
+
+        service.anonymize(actor, investor.getId());
+        service.anonymize(actor, investor.getId());
+
+        assertThat(investor.getDeletedAt()).isEqualTo(now.minusSeconds(60));
+        verify(events, times(1)).publishEvent(new UserAnonymized(investor.getId()));
+    }
+
+    @Test
+    void cannotAnonymizeLastAdmin() {
+        when(users.findById(admin.getId())).thenReturn(Optional.of(admin));
+        when(users.lockActiveAdmins()).thenReturn(List.of(admin));
+
+        assertThatThrownBy(() -> service.anonymize(actor, admin.getId())).isInstanceOf(LastAdminException.class);
+        assertThat(admin.isAnonymized()).isFalse();
     }
 }

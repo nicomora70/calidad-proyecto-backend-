@@ -105,4 +105,4 @@ equipo hay que agregar `ports: ["5432:5432"]`.
 
 Instalación en el cliente: [docs/instalacion-cliente.md](docs/instalacion-cliente.md) ·
 Operación: [docs/manual-operacion.md](docs/manual-operacion.md) ·
-Términos: [docs/terminos-de-uso.md](docs/terminos-de-uso.md) (ver [task.md](task.md))
+Términos: [docs/terminos-de-uso.md](docs/terminos-de-uso.md) (ver [task.md](task.md)) · Privacidad y supresión de datos (Ley 1581): [docs/privacidad.md](docs/privacidad.md)

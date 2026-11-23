@@ -15,7 +15,7 @@ Proceso: identificar → analizar → evaluar → tratar → seguir y revisar. S
 | R-07 | Filtración de secretos (`JWT_SECRET`, claves de API) | Subir `.env` o claves por defecto | 2 | 5 | 10 | Mitigar | `.env` ignorado por git, la API no arranca sin secreto fuerte | Bajo (4) |
 | R-08 | Vulnerabilidad en dependencias | Librerías desactualizadas | 3 | 4 | 12 | Mitigar | Spring Boot en el último parche; Dependabot, Trivy en cada PR y Dependency-Check semanal | Bajo (6) |
 | R-09 | El usuario toma la IA o las proyecciones como asesoría financiera | Texto de IA persuasivo | 3 | 4 | 12 | Mitigar / Transferir | Aviso legal fijo en cada alerta y en los términos de uso | Medio |
-| R-10 | Incumplimiento de la Ley 1581 (datos personales) | Sin aviso de privacidad ni supresión | 2 | 4 | 8 | Mitigar | Datos mínimos y borrado lógico; procedimiento de supresión pendiente | Medio |
+| R-10 | Incumplimiento de la Ley 1581 (datos personales) | Sin aviso de privacidad ni supresión | 2 | 4 | 8 | Mitigar | Datos mínimos, borrado lógico, aviso de privacidad y supresión definitiva (`anonymize`, `docs/privacidad.md`) | Bajo (4) |
 | R-11 | Deuda técnica que frena las fases siguientes | Prisa, sin estándares | 3 | 3 | 9 | Mitigar | CI obligatorio, cobertura ≥ 80 %, linters, definición de "hecho" | Bajo (4) |
 | R-12 | Ventana de 15 min con permisos viejos tras cambiar un rol | JWT sin estado | 2 | 3 | 6 | Aceptar | Refresh tokens revocados al instante; limitación documentada en `task.md` | Bajo (6) |
 

@@ -392,6 +392,31 @@ class InstallationFlowIT {
                 .andExpect(jsonPath("$.code").value("LAST_ADMIN"));
     }
 
+    /** Ley 1581: definitive suppression; the e-mail becomes reusable and the old one cannot log in. */
+    @Test
+    void anonymizedUserLosesIdentityAndCannotLogIn() throws Exception {
+        String adminToken = adminToken();
+        String userId = read(postJson("/api/v1/users", adminToken, """
+                {"fullName":"Habeas Data","email":"habeas@cliente.co","role":"INVESTOR",
+                 "temporaryPassword":"temporal-123"}""").andExpect(status().isCreated()), "$.id");
+
+        postJson("/api/v1/users/" + userId + "/anonymize", adminToken, "").andExpect(status().isNoContent());
+        // idempotent
+        postJson("/api/v1/users/" + userId + "/anonymize", adminToken, "").andExpect(status().isNoContent());
+
+        login("habeas@cliente.co", "temporal-123").andExpect(status().isUnauthorized());
+        mvc.perform(get("/api/v1/users/" + userId).header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().isNotFound());
+        mvc.perform(get("/api/v1/audit")
+                        .param("action", "USER_ANONYMIZED")
+                        .header("Authorization", "Bearer " + adminToken))
+                .andExpect(jsonPath("$.content[0].entityId").value(userId));
+        // the e-mail can be registered again
+        postJson("/api/v1/users", adminToken, """
+                        {"fullName":"Habeas Data","email":"habeas@cliente.co","role":"INVESTOR",
+                         "temporaryPassword":"temporal-123"}""").andExpect(status().isCreated());
+    }
+
     @Test
     void publicAndProtectedEndpoints() throws Exception {
         mvc.perform(get("/api/v1/health"))
