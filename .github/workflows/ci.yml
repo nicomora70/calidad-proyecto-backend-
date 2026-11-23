@@ -97,6 +97,18 @@ jobs:
           curl -fsS "$API/api/news" -H "Authorization: Bearer $inv" | jq -e '.page.totalElements == 3'
           curl -fsS "$API/api/news/sentiment" -H "Authorization: Bearer $inv" | jq -e '.sentiment.count >= 0 and (.sentiment.label | length > 0)'
           test "$(curl -s -o /dev/null -w '%{http_code}' -X POST $API/api/news/refresh -H "Authorization: Bearer $inv")" = "403"
+
+          # Notifications: the ready AI alert is in the investor's inbox (no SMTP in CI: in-app only)
+          for i in $(seq 1 20); do
+            unread=$(curl -fsS "$API/api/me/notifications/unread-count" -H "Authorization: Bearer $inv" | jq -r .count)
+            [ "$unread" -ge 1 ] && break
+            sleep 0.5
+          done
+          test "$unread" -ge 1
+          curl -fsS "$API/api/me/notifications" -H "Authorization: Bearer $inv" | jq -e '.content[0].type == "AI_ALERT_READY"'
+          curl -fsS "$API/api/me/notification-preferences" -H "Authorization: Bearer $inv" | jq -e '.emailAvailable == false'
+          curl -fsS -X POST "$API/api/me/notifications/read-all" -H "Authorization: Bearer $inv" | jq -e '.updated >= 1'
+          curl -fsS "$API/actuator/health" | jq -e '.status == "UP"'
       - name: Logs on failure
         if: failure()
         run: docker compose logs

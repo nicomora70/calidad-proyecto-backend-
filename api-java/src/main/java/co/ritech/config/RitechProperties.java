@@ -22,6 +22,7 @@ public record RitechProperties(
         Security security,
         Ai ai,
         News news,
+        Notifications notifications,
         @DefaultValue("America/Bogota") ZoneId timezone) {
 
     public record Simulation(
@@ -84,4 +85,12 @@ public record RitechProperties(
             /* Headlines given to the AI prompt and how far back they may go */
             @DefaultValue("5") int alertHeadlines,
             @DefaultValue("48h") Duration alertWindow) {}
+
+    public record Notifications(
+            @DefaultValue("RiTech <no-reply@ritech.local>") String mailFrom,
+            /* E-mail delivery attempts; the wait doubles after each failure */
+            @DefaultValue("5") int maxAttempts,
+            @DefaultValue("1m") Duration retryBackoff,
+            /* Default |daily variation| (%) that triggers MARKET_VARIATION */
+            @DefaultValue("2.00") BigDecimal defaultVariationThresholdPct) {}
 }

@@ -33,6 +33,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -155,6 +156,27 @@ class InstallationFlowIT {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.page.totalElements").value(1));
 
+        // The ready alert lands in the in-app inbox (no SMTP configured: in-app only)
+        assertThat(awaitUnread(investorToken)).isEqualTo(1);
+        String notificationId = read(
+                mvc.perform(get("/api/me/notifications").header("Authorization", "Bearer " + investorToken))
+                        .andExpect(jsonPath("$.content[0].type").value("AI_ALERT_READY")),
+                "$.content[0].id");
+        mvc.perform(patch("/api/me/notifications/" + notificationId + "/read")
+                        .header("Authorization", "Bearer " + investorToken))
+                .andExpect(status().isNoContent());
+        mvc.perform(get("/api/me/notifications/unread-count").header("Authorization", "Bearer " + investorToken))
+                .andExpect(jsonPath("$.count").value(0));
+        mvc.perform(get("/api/me/notification-preferences").header("Authorization", "Bearer " + investorToken))
+                .andExpect(jsonPath("$.variationThresholdPct").value(2.00))
+                .andExpect(jsonPath("$.emailAvailable").value(false));
+        mvc.perform(put("/api/me/notification-preferences")
+                        .header("Authorization", "Bearer " + investorToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"emailEnabled\":false,\"inAppEnabled\":true,\"variationThresholdPct\":1.25}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.variationThresholdPct").value(1.25));
+
         // History: own list, own detail; investor cannot see the global list or the dashboard
         mvc.perform(get("/api/me/simulations").header("Authorization", "Bearer " + investorToken))
                 .andExpect(status().isOk())
@@ -187,6 +209,23 @@ class InstallationFlowIT {
         login("ana@cliente.co", "ana-segura-2026").andExpect(status().isUnauthorized());
         mvc.perform(get("/api/simulations/" + simulationId).header("Authorization", "Bearer " + adminToken))
                 .andExpect(status().isOk());
+    }
+
+    /** Polls the unread counter until it is positive, up to 5 s. */
+    private int awaitUnread(String token) throws Exception {
+        int count = 0;
+        for (int i = 0; i < 50 && count == 0; i++) {
+            count = JsonPath.read(
+                    mvc.perform(get("/api/me/notifications/unread-count").header("Authorization", "Bearer " + token))
+                            .andReturn()
+                            .getResponse()
+                            .getContentAsString(),
+                    "$.count");
+            if (count == 0) {
+                Thread.sleep(100);
+            }
+        }
+        return count;
     }
 
     /** Polls the alert endpoint while it answers 202 (PENDING), up to 5 s. */

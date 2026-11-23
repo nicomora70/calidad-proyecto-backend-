@@ -11,6 +11,18 @@ spring:
       ddl-auto: validate
     properties:
       hibernate.jdbc.time_zone: UTC
+  # Client SMTP. Without MAIL_HOST, e-mail is disabled and only the in-app inbox is used.
+  mail:
+    host: ${MAIL_HOST:}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail.smtp.auth: ${MAIL_SMTP_AUTH:true}
+      mail.smtp.starttls.enable: ${MAIL_STARTTLS:true}
+      mail.smtp.connectiontimeout: 10000
+      mail.smtp.timeout: 10000
+      mail.smtp.writetimeout: 10000
   flyway:
     enabled: true
     locations: classpath:db/migration
@@ -36,6 +48,10 @@ management:
     health:
       probes:
         enabled: true
+  health:
+    # The client's SMTP being down must not mark the API unhealthy (outbox retries instead)
+    mail:
+      enabled: false
 
 springdoc:
   swagger-ui:
@@ -44,7 +60,7 @@ springdoc:
     path: /v3/api-docs
 
 ritech:
-  version: 0.4.0
+  version: 0.5.0
   timezone: America/Bogota
   security:
     jwt-secret: ${JWT_SECRET:}
@@ -85,3 +101,9 @@ ritech:
     refresh-on-startup: ${NEWS_REFRESH_ON_STARTUP:true}
     alert-headlines: 5
     alert-window: 48h
+  notifications:
+    mail-from: ${MAIL_FROM:RiTech <no-reply@ritech.local>}
+    max-attempts: 5
+    retry-backoff: 1m
+    dispatch-interval-ms: 30000
+    default-variation-threshold-pct: ${NOTIFICATION_VARIATION_THRESHOLD_PCT:2.00}

@@ -11,6 +11,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -25,23 +26,44 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 class AuditServiceTest {
 
     private final Instant now = Instant.parse("2026-11-20T15:00:00Z");
     private AuditLogRepository repository;
+    private ApplicationEventPublisher events;
     private AuditService service;
 
     @BeforeEach
     void setUp() {
         repository = mock(AuditLogRepository.class);
-        service = new AuditService(repository, Clock.fixed(now, ZoneOffset.UTC));
+        events = mock(ApplicationEventPublisher.class);
+        service = new AuditService(repository, events, Clock.fixed(now, ZoneOffset.UTC));
     }
 
     @AfterEach
     void clearRequest() {
         RequestContextHolder.resetRequestAttributes();
+    }
+
+    @Test
+    void securityActionsPublishEventForNotifications() {
+        UUID user = UUID.randomUUID();
+
+        service.record(user, "ACCOUNT_LOCKED", "USER", user, null);
+
+        verify(events).publishEvent(new SecurityEventRecorded("ACCOUNT_LOCKED", user));
+    }
+
+    @Test
+    void ordinaryActionsPublishNothing() {
+        UUID user = UUID.randomUUID();
+
+        service.record(user, "LOGIN_FAILED", "USER", user, null);
+
+        verifyNoInteractions(events);
     }
 
     @Test

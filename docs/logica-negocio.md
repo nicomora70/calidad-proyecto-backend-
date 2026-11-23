@@ -97,7 +97,7 @@ Reglas:
 5. **Java** guarda la simulación (inmutable) y registra la auditoría `SIMULATION_CREATED`.
 6. Se genera la alerta con IA en segundo plano (CU-05). Es *best-effort*: si falla,
    la simulación sigue siendo válida.
-7. *(Fase 4)* Si el rendimiento supera el umbral del usuario, se le notifica.
+7. Si la variación consultada alcanza el umbral de un usuario, se le notifica (CU-07).
 
 > Por qué una caché: la capa gratuita de Alpha Vantage permite 25 llamadas al día, y
 > todas las simulaciones de una misma ventana deben usar la misma cifra de mercado para
@@ -152,9 +152,26 @@ Desde la Fase 3 el prompt (`alert-v2`) incluye los titulares recientes guardados
 6. La alerta con IA (CU-05) recibe los últimos 5 titulares de las 48 h previas con su etiqueta.
 
 ### CU-07 Notificaciones (Fase 4)
-Canales: en la app (bandeja) y correo. Disparadores: alerta IA nueva, variación del día
-mayor al umbral configurado por el usuario, licencia por vencer (a IT_MANAGER/ADMIN).
-Cada usuario elige canales y umbrales.
+Canales: en la app (bandeja) y correo. Cada usuario elige canales y umbral en
+`/api/me/notification-preferences`. Mientras no los cambie se usan los valores por defecto:
+ambos canales activos y umbral `NOTIFICATION_VARIATION_THRESHOLD_PCT` (2 %).
+
+| Disparador | Destinatarios | Deduplicación |
+|---|---|---|
+| Alerta IA en `DONE` (CU-05) | dueño de la simulación | una por simulación |
+| Variación del día con \|variación\| ≥ umbral (al consultar el mercado) | usuarios activos cuyo umbral se alcanza | una por símbolo y fecha de mercado |
+| `ACCOUNT_LOCKED`, `REFRESH_TOKEN_REUSED` (auditoría) | IT_MANAGER y ADMIN activos | — |
+| Licencia a 30 días de vencer (Fase 5) | IT_MANAGER y ADMIN | por definir en la Fase 5 |
+
+Entrega:
+1. La notificación en la app se guarda ya entregada (`SENT`).
+2. El correo se guarda `PENDING` (outbox). Un proceso cada 30 s lo envía con la plantilla HTML.
+   Si falla, se reintenta con espera exponencial (1, 2, 4… min) hasta `max-attempts` (5)
+   y luego queda `FAILED`. Un usuario inactivo o eliminado → `FAILED` (`USER_INACTIVE`).
+3. Sin `MAIL_HOST` no se crean correos: solo bandeja. `emailAvailable` en las preferencias
+   lo indica al frontend.
+4. Los disparadores son *best-effort*: un fallo queda en el log y nunca afecta la operación original.
+5. `PATCH /api/me/notifications/{id}/read` es idempotente; una notificación ajena → 404.
 
 ### CU-08 Licencia
 Al arrancar, la API valida la firma (Ed25519) del archivo de licencia: empresa, fecha de
@@ -190,6 +207,7 @@ que el frontend usa para traducir el mensaje.
 | 403 | `FORBIDDEN` | Rol sin permiso |
 | 403 | `PASSWORD_CHANGE_REQUIRED` | Contraseña temporal: solo se permite `/api/auth/change-password`, `/api/auth/logout`, `/api/auth/refresh` y `/api/me` |
 | 404 | `USER_NOT_FOUND` / `SIMULATION_NOT_FOUND` | Recurso inexistente |
+| 404 | `NOTIFICATION_NOT_FOUND` | Notificación inexistente o de otro usuario |
 | 404 | `AI_ALERT_NOT_FOUND` | La simulación no tiene alerta (creada antes de la Fase 2) |
 | 409 | `EMAIL_ALREADY_EXISTS` | Correo duplicado |
 | 409 | `LAST_ADMIN` | Se intenta quitar o eliminar al último ADMIN |
