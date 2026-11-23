@@ -24,52 +24,62 @@
 - [x] Proveedor de mercado intercambiable (`fixed` / `alphavantage`) con caché por TTL
 - [x] `POST /api/simulations`, `GET /api/simulations` (paginado), `GET /api/dashboard/statistics`
 - [x] Auditoría de `SIMULATION_CREATED`
-- [x] Pruebas: pytest (14) y JUnit/MockMvc (7)
+- [x] Pruebas: pytest (14) y JUnit/MockMvc
 - [x] GitHub Actions: pruebas de ambos servicios y smoke test con `docker compose`
 
-## Fase 1 — Núcleo vendible (MVP)
+## Fase 1 — Núcleo vendible (MVP) 🟡 casi completa
 
-### Seguridad y autenticación **(P)**
-- [ ] Agregar `spring-boot-starter-security` y `spring-boot-starter-oauth2-resource-server`
-- [ ] `POST /api/auth/login` → `accessToken` (JWT de 15 min) y `refreshToken` (7 días, guardado como hash)
-- [ ] `POST /api/auth/refresh` con rotación de refresh tokens y revocación del anterior
-- [ ] `POST /api/auth/logout` (revoca el refresh token)
-- [ ] `POST /api/auth/change-password`; obligatorio si `must_change_password = true`
-- [ ] Firma de los JWT con clave por instalación (`JWT_SECRET` o par RSA en un volumen)
-- [ ] Bloqueo tras 5 intentos fallidos durante 15 minutos (`423 ACCOUNT_LOCKED`)
-- [ ] Autorización por rol con `@PreAuthorize`, según la matriz de `logica-negocio.md`
-- [ ] Sacar `userId` del cuerpo de `POST /api/simulations`: se toma del JWT
-- [ ] Migración V2: `refresh_tokens`, columnas de bloqueo y `simulations.user_id NOT NULL`
+### Seguridad y autenticación ✅
+- [x] `spring-boot-starter-security` y `spring-boot-starter-oauth2-resource-server` (Spring Boot 3.5.16)
+- [x] `POST /api/auth/login` → `accessToken` (JWT HS256 de 15 min) y `refreshToken` opaco (7 días, guardado como hash SHA-256)
+- [x] `POST /api/auth/refresh` con rotación: el token usado se revoca y, si se reutiliza uno revocado, se cierran todas las sesiones del usuario
+- [x] `POST /api/auth/logout` (revoca el refresh token)
+- [x] `POST /api/auth/change-password`: obligatorio con contraseña temporal (`403 PASSWORD_CHANGE_REQUIRED`); cierra las demás sesiones
+- [x] Firma con `JWT_SECRET` por instalación (mínimo 32 bytes; la API no arranca sin él)
+- [x] Bloqueo tras 5 intentos fallidos durante 15 minutos (`423 ACCOUNT_LOCKED`), guardado aunque la petición falle
+- [x] Autorización por rol con `@PreAuthorize`, según la matriz de `logica-negocio.md`
+- [x] `userId` sale del JWT, no del cuerpo de `POST /api/simulations`
+- [x] Migración V2: `refresh_tokens`, columnas de bloqueo y `simulations.user_id NOT NULL`
+- [x] Errores 401/403 de la cadena de seguridad también en RFC 7807 (`UNAUTHORIZED`, `TOKEN_EXPIRED`, `FORBIDDEN`)
+- [x] Un token vencido enviado a un endpoint público (p. ej. `/api/auth/refresh`) se ignora en vez de dar 401
+- [x] CORS gestionado por Spring Security, solo para `CORS_ALLOWED_ORIGINS`
 
-### Usuarios **(P)**
-- [ ] Entidad `User` y `UserRepository`, contraseñas con BCrypt
-- [ ] Crear el ADMIN inicial desde `BOOTSTRAP_ADMIN_EMAIL` / `BOOTSTRAP_ADMIN_PASSWORD` si no hay usuarios
-- [ ] `POST /api/users` (ADMIN): crear usuario
-- [ ] `GET /api/users` (ADMIN): paginado, con filtros por rol y estado
-- [ ] `GET /api/users/{id}`, `PATCH /api/users/{id}` (nombre y estado activo)
-- [ ] `PATCH /api/users/{id}/role` con la regla `LAST_ADMIN`
-- [ ] `DELETE /api/users/{id}` como borrado lógico
-- [ ] `GET /api/me`: perfil del usuario autenticado
-- [ ] Auditoría de LOGIN_SUCCESS, LOGIN_FAILED, USER_CREATED, USER_DELETED y ROLE_CHANGED
+### Usuarios ✅
+- [x] Entidad `User` y `UserRepository`, contraseñas con BCrypt (cost 12); correo normalizado en minúsculas
+- [x] ADMIN inicial desde `BOOTSTRAP_ADMIN_EMAIL` / `BOOTSTRAP_ADMIN_PASSWORD` si no hay usuarios (con contraseña temporal)
+- [x] `POST /api/users` (ADMIN): crea el usuario con contraseña temporal
+- [x] `GET /api/users` (ADMIN): paginado, con filtros `role` y `active`
+- [x] `GET /api/users/{id}`, `PATCH /api/users/{id}` (nombre y estado activo; al desactivar se revocan sus sesiones)
+- [x] `PATCH /api/users/{id}/role` con la regla `LAST_ADMIN` (con bloqueo de filas contra condiciones de carrera)
+- [x] `DELETE /api/users/{id}` como borrado lógico (las simulaciones se conservan)
+- [x] `GET /api/me`: perfil del usuario autenticado
+- [x] Auditoría: LOGIN_SUCCESS, LOGIN_FAILED, LOGIN_BLOCKED, ACCOUNT_LOCKED, LOGOUT, PASSWORD_CHANGED, REFRESH_TOKEN_REUSED, USER_CREATED, USER_ACTIVATED, USER_DEACTIVATED, USER_DELETED, ROLE_CHANGED, BOOTSTRAP_ADMIN_CREATED
 
 ### Simulaciones e historial
-- [ ] `GET /api/simulations/{id}` (dueño o ADMIN)
-- [ ] `GET /api/me/simulations` con filtros `from` y `to`
-- [ ] El ADMIN puede filtrar por `userId`; el INVESTOR solo ve las suyas
-- [ ] Dashboard con filtros por fecha y usuario, solo para ADMIN
+- [x] `GET /api/simulations/{id}` (dueño o ADMIN; a los demás les responde 404 para no revelar ids)
+- [x] `GET /api/me/simulations` con filtros `from` y `to` (fechas inclusivas en `America/Bogota`)
+- [x] `GET /api/simulations` solo para ADMIN, con filtros `userId`, `from` y `to`
+- [x] Dashboard con filtros por fecha y usuario, solo para ADMIN
+- [x] Advisory lock de PostgreSQL para que, cuando la caché vence, solo una petición llame a Alpha Vantage
 - [ ] Resilience4j: reintento y circuit breaker hacia el calc-engine y Alpha Vantage
-- [ ] Bloqueo con `SELECT ... FOR UPDATE` o restricción única para evitar dobles llamadas a Alpha Vantage cuando la caché vence
 
-### Auditoría
-- [ ] `GET /api/audit` (IT_MANAGER/ADMIN), paginado y con filtros por acción, actor y fecha
-- [ ] Incluir IP y user-agent en `details`
+### Auditoría ✅
+- [x] `GET /api/audit` (IT_MANAGER/ADMIN), paginado y con filtros por acción, actor y fecha
+- [x] IP (respetando `X-Forwarded-For` del proxy) y user-agent en columnas propias
 
 ### Calidad
-- [ ] Pruebas de integración con **Testcontainers** (Postgres real y migraciones)
-- [ ] Prueba de contrato api ↔ calc-engine (cliente contra un contenedor real)
-- [ ] Cobertura con JaCoCo ≥ 80 % en servicios, ejecutada en CI
+- [x] Pruebas de integración con **Testcontainers** (`InstallationFlowIT`: Postgres real, Flyway y validación del esquema) en CI
+- [x] Pruebas unitarias de auth, usuarios, simulaciones y seguridad de endpoints (27)
+- [x] Smoke test en CI con el flujo completo autenticado sobre `docker compose`
+- [x] Reporte de cobertura JaCoCo publicado como artefacto en CI
+- [ ] Umbral de cobertura ≥ 80 % que haga fallar el build
 - [ ] Linters: Spotless (Java) y Ruff (Python) en CI
 - [ ] Logs en JSON con `traceId` por petición
+
+> **Limitación conocida:** un access token sigue siendo válido hasta su vencimiento (15 min) aunque se
+> cambie el rol o se desactive al usuario; lo que se revoca de inmediato es el refresh token. Si un
+> cliente necesita revocación instantánea, se puede verificar el estado del usuario en cada petición
+> (con una consulta extra a la BD).
 
 ## Fase 2 — IA integrada
 

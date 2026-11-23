@@ -9,6 +9,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
+import org.springframework.lang.Nullable;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -27,6 +29,12 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
         return problem(ex.getStatus(), ex.getCode(), ex.getMessage());
     }
 
+    /** @PreAuthorize failures inside controllers. */
+    @ExceptionHandler(AccessDeniedException.class)
+    public ProblemDetail handleAccessDenied(AccessDeniedException ex) {
+        return problem(HttpStatus.FORBIDDEN, "FORBIDDEN", "You do not have permission to perform this action");
+    }
+
     @Override
     protected ResponseEntity<Object> handleMethodArgumentNotValid(
             MethodArgumentNotValidException ex, HttpHeaders headers, HttpStatusCode status,
@@ -39,6 +47,20 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
         ProblemDetail body = problem(HttpStatus.BAD_REQUEST, "VALIDATION_ERROR", "Invalid request");
         body.setProperty("errors", errors);
         return ResponseEntity.badRequest().body(body);
+    }
+
+    /** Spring MVC errors (bad UUID, malformed JSON, 405...) also get a "code". */
+    @Override
+    protected ResponseEntity<Object> handleExceptionInternal(
+            Exception ex, @Nullable Object body, HttpHeaders headers, HttpStatusCode status,
+            WebRequest request) {
+        if (body instanceof ProblemDetail problem
+                && (problem.getProperties() == null || !problem.getProperties().containsKey("code"))) {
+            String code = status.value() == 400 ? "BAD_REQUEST" : "HTTP_" + status.value();
+            problem.setType(URI.create("urn:ritech:error:" + code));
+            problem.setProperty("code", code);
+        }
+        return super.handleExceptionInternal(ex, body, headers, status, request);
     }
 
     private static ProblemDetail problem(HttpStatusCode status, String code, String detail) {

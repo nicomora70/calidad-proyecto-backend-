@@ -33,8 +33,8 @@ class MarketVariationServiceTest {
         provider = mock(MarketDataProvider.class);
         repository = mock(MarketVariationRepository.class);
         when(repository.save(any(MarketVariation.class))).thenAnswer(inv -> inv.getArgument(0));
-        service = new MarketVariationService(provider, repository, TestFixtures.properties(),
-                Clock.fixed(now, ZoneOffset.UTC));
+        service = new MarketVariationService(provider, repository, mock(MarketFetchLock.class),
+                TestFixtures.properties(), Clock.fixed(now, ZoneOffset.UTC));
     }
 
     @Test

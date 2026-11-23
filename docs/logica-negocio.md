@@ -71,9 +71,14 @@ Estadísticas del dashboard (también en Python):
 
 Reglas:
 
-- **No hay autoregistro**: el ADMIN crea las cuentas. El primer ADMIN se crea al
+- **No hay autoregistro**: el ADMIN crea las cuentas con una **contraseña temporal** y se la
+  entrega al usuario, que debe cambiarla en su primer inicio de sesión. El primer ADMIN se crea al
   arrancar a partir de variables de entorno (`BOOTSTRAP_ADMIN_EMAIL`, `BOOTSTRAP_ADMIN_PASSWORD`)
-  y debe cambiar su contraseña en el primer inicio de sesión.
+  y sigue la misma regla.
+- **Sesiones**: el access token (JWT) dura 15 minutos y el refresh token 7 días. Cada refresh
+  emite un par nuevo y revoca el anterior; si alguien reutiliza un refresh token ya revocado
+  (señal de robo), se cierran todas las sesiones de ese usuario. Cambiar la contraseña, cambiar
+  el rol, desactivar o eliminar al usuario revoca sus refresh tokens.
 - Un ADMIN no puede quitarse a sí mismo el rol ni eliminarse si es el último ADMIN activo.
 - **Borrado lógico**: eliminar un usuario llena `deleted_at` y lo desactiva; sus
   simulaciones se conservan porque son historial financiero.
@@ -150,10 +155,17 @@ que el frontend usa para traducir el mensaje.
 | HTTP | code | Cuándo |
 |---|---|---|
 | 400 | `VALIDATION_ERROR` | Cuerpo inválido (incluye `errors` por campo) |
+| 400 | `BAD_REQUEST` | Petición mal formada (JSON inválido, UUID inválido en la URL…) |
 | 400 | `INSUFFICIENT_CAPITAL` | Capital por debajo del mínimo |
+| 400 | `INVALID_DATE_RANGE` | `from` es posterior a `to` |
+| 400 | `INVALID_CURRENT_PASSWORD` | La contraseña actual no coincide al cambiarla |
+| 400 | `PASSWORD_REUSED` | La nueva contraseña es igual a la actual |
+| 401 | `UNAUTHORIZED` | Falta el token o es inválido |
 | 401 | `INVALID_CREDENTIALS` | Correo o contraseña incorrectos (mensaje genérico) |
-| 401 | `TOKEN_EXPIRED` | Token de acceso vencido |
+| 401 | `TOKEN_EXPIRED` | Token de acceso vencido: hay que llamar a `/api/auth/refresh` |
+| 401 | `INVALID_REFRESH_TOKEN` | Refresh token desconocido, vencido o revocado: hay que volver a iniciar sesión |
 | 403 | `FORBIDDEN` | Rol sin permiso |
+| 403 | `PASSWORD_CHANGE_REQUIRED` | Contraseña temporal: solo se permite `/api/auth/change-password`, `/api/auth/logout`, `/api/auth/refresh` y `/api/me` |
 | 404 | `USER_NOT_FOUND` / `SIMULATION_NOT_FOUND` | Recurso inexistente |
 | 409 | `EMAIL_ALREADY_EXISTS` | Correo duplicado |
 | 409 | `LAST_ADMIN` | Se intenta quitar o eliminar al último ADMIN |

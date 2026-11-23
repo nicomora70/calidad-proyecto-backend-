@@ -8,7 +8,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
-/** Append-only record of relevant actions (who, what, when). */
+/** Append-only record of relevant actions (who, what, when, from where). */
 @Entity
 @Table(name = "audit_log")
 public class AuditLog {
@@ -31,6 +31,12 @@ public class AuditLog {
     @Column(columnDefinition = "text")
     private String details;
 
+    @Column(name = "ip_address", length = 45)
+    private String ipAddress;
+
+    @Column(name = "user_agent", length = 300)
+    private String userAgent;
+
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
@@ -38,13 +44,15 @@ public class AuditLog {
     }
 
     public AuditLog(UUID actorId, String action, String entityType, UUID entityId,
-                    String details, Instant createdAt) {
+                    String details, String ipAddress, String userAgent, Instant createdAt) {
         this.id = UUID.randomUUID();
         this.actorId = actorId;
         this.action = action;
         this.entityType = entityType;
         this.entityId = entityId;
         this.details = details;
+        this.ipAddress = ipAddress;
+        this.userAgent = userAgent;
         this.createdAt = createdAt;
     }
 
@@ -54,5 +62,7 @@ public class AuditLog {
     public String getEntityType() { return entityType; }
     public UUID getEntityId() { return entityId; }
     public String getDetails() { return details; }
+    public String getIpAddress() { return ipAddress; }
+    public String getUserAgent() { return userAgent; }
     public Instant getCreatedAt() { return createdAt; }
 }

@@ -1,15 +1,23 @@
 package co.ritech.simulation;
 
-import java.util.List;
+import java.time.Instant;
 import java.util.UUID;
 
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
-public interface SimulationRepository extends JpaRepository<Simulation, UUID> {
+public interface SimulationRepository extends JpaRepository<Simulation, UUID>, JpaSpecificationExecutor<Simulation> {
 
-    Page<Simulation> findByUserId(UUID userId, Pageable pageable);
+    static Specification<Simulation> ownedBy(UUID userId) {
+        return (root, query, cb) -> userId == null ? null : cb.equal(root.get("userId"), userId);
+    }
 
-    List<Simulation> findAllByOrderByCreatedAtAsc();
+    static Specification<Simulation> createdFrom(Instant from) {
+        return (root, query, cb) -> from == null ? null : cb.greaterThanOrEqualTo(root.get("createdAt"), from);
+    }
+
+    static Specification<Simulation> createdBefore(Instant to) {
+        return (root, query, cb) -> to == null ? null : cb.lessThan(root.get("createdAt"), to);
+    }
 }

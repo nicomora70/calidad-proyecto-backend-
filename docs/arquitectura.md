@@ -25,10 +25,9 @@ deterministas y sin estado.
 
 ## Stack
 
-- **Java**: Spring Web, Spring Data JPA (Hibernate), Flyway, Bean Validation, springdoc-openapi
-  (Swagger), Actuator, RestClient. A partir de la Fase 1: Spring Security con OAuth2 Resource
-  Server (JWT), Spring Mail, `@Scheduled`, Resilience4j (reintentos y circuit breaker),
-  Testcontainers.
+- **Java**: Spring Boot 3.5.16, Spring Web, Spring Data JPA (Hibernate), Flyway, Bean Validation,
+  springdoc-openapi (Swagger), Actuator, RestClient, Spring Security con OAuth2 Resource Server
+  (JWT HS256), Testcontainers y JaCoCo. Próximas fases: Spring Mail, `@Scheduled` y Resilience4j.
 - **Python**: FastAPI, Pydantic v2, Uvicorn, pytest. A partir de la Fase 2: NumPy.
 - **Infraestructura**: Docker multi-stage con usuario no root, healthchecks y GitHub Actions
   (pruebas y smoke test con `docker compose`).
@@ -56,7 +55,42 @@ Timeout de 5 s. Ante un fallo, la API responde `503 CALC_ENGINE_UNAVAILABLE`.
 
 ## API pública (para el equipo de frontend)
 
-- Documentación en vivo: `http://<host>:8080/swagger-ui.html` · JSON en `/v3/api-docs`.
+### Autenticación
+
+```
+POST /api/auth/login            {email, password}           → TokenResponse
+POST /api/auth/refresh          {refreshToken}              → TokenResponse (el anterior queda revocado)
+POST /api/auth/logout           {refreshToken}              → 204
+POST /api/auth/change-password  {currentPassword, newPassword}  (con Bearer) → TokenResponse
+
+TokenResponse = { accessToken, tokenType: "Bearer", expiresIn (s), refreshToken,
+                  refreshTokenExpiresAt, user: { id, fullName, email, role, active,
+                  mustChangePassword, lastLoginAt, createdAt } }
+```
+
+Flujo recomendado en el frontend:
+1. Login. Si `user.mustChangePassword` es `true`, mostrar la pantalla de cambio de contraseña y
+   reemplazar los tokens por los que devuelve `change-password`.
+2. Enviar `Authorization: Bearer <accessToken>` en cada petición.
+3. Ante un `401 TOKEN_EXPIRED`, llamar a `/api/auth/refresh` **una sola vez** y reintentar; si
+   responde `401 INVALID_REFRESH_TOKEN`, volver al login.
+4. Guardar el refresh token fuera del alcance de scripts de terceros y usar siempre el último
+   recibido, porque cada uno sirve una sola vez.
+
+### Endpoints por rol
+
+| Endpoint | Rol |
+|---|---|
+| `GET /api/me`, `GET /api/me/simulations` | cualquiera autenticado |
+| `POST /api/simulations` | INVESTOR, ADMIN |
+| `GET /api/simulations/{id}` | dueño o ADMIN |
+| `GET /api/simulations`, `GET /api/dashboard/statistics` | ADMIN |
+| `/api/users/**` | ADMIN |
+| `GET /api/audit` | ADMIN, IT_MANAGER |
+
+### Convenciones
+
+- Documentación en vivo: `http://<host>:8080/swagger-ui.html` (botón **Authorize** para pegar el token) · JSON en `/v3/api-docs`.
 - Prefijo `/api`, JSON en `camelCase`, errores RFC 7807 con `code` (ver `logica-negocio.md`).
 - Paginación de Spring: `?page=0&size=20&sort=createdAt,desc` → `{ content, page: { size, number, totalElements, totalPages } }`.
 - CORS: solo los orígenes de `CORS_ALLOWED_ORIGINS`.
@@ -73,8 +107,9 @@ co.ritech
 ├── simulation   entidad, servicio, controlador
 ├── dashboard    estadísticas globales
 ├── audit        registro de auditoría
-├── user         (Fase 1) usuarios y roles
-├── security     (Fase 1) JWT, filtros, contraseñas
+├── user         usuarios, roles, /api/me, admin inicial
+├── auth         login, refresh tokens, logout, cambio de contraseña
+├── security     configuración de Spring Security, JWT, CurrentUser
 ├── license      (Fase 5) validación de la licencia
 ├── ai / news / notification   (Fases 2–4)
 ```
