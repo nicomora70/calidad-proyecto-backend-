@@ -105,16 +105,16 @@
 - [ ] Respaldo y restauración probados (25010 recuperabilidad; 27001 A.8.13), junto con la Fase 5
 - [ ] Actualizar al cierre de cada fase: evaluación 25010 (§3), informe de pruebas (§8), matriz de trazabilidad y registro de riesgos
 
-## Fase 2 — IA integrada
+## Fase 2 — IA integrada ✅
 
-- [ ] Interfaz `AiAlertGenerator` con implementaciones intercambiables (Claude, Gemini y otras), elegida por `AI_PROVIDER`
-- [ ] Prompt versionado con noticias recientes y datos de la simulación; respuesta en JSON validada (`title` y `content`)
-- [ ] Generación **asíncrona** después de guardar la simulación (`@Async` o cola en BD); nunca bloquea ni revierte la simulación
-- [ ] Migración V3 `ai_alerts`: modelo, tokens, costo y estado (`PENDING`, `DONE`, `FAILED`)
-- [ ] `GET /api/simulations/{id}/alert` y `GET /api/me/alerts`
-- [ ] Timeouts, reintentos con backoff y límite de gasto mensual configurable
-- [ ] Aviso legal fijo: "Contenido generado por IA; no constituye asesoría financiera"
-- [ ] Pruebas con un proveedor falso; nada de llamadas reales en CI
+- [x] Interfaz `AiAlertGenerator` con implementaciones intercambiables elegidas por `AI_PROVIDER`: `template` (reglas, sin llamadas externas; por defecto) y `gemini`
+- [x] Prompt versionado (`prompts/alert-v1.txt`) con los datos de la simulación; respuesta en JSON validada (`title` y `content`). Las noticias se agregan en la Fase 3
+- [x] Generación **asíncrona** después del commit (`@TransactionalEventListener` + `@Async`); nunca bloquea ni revierte la simulación
+- [x] Migración V3 `ai_alerts`: modelo, versión del prompt, tokens, costo, estado (`PENDING`, `DONE`, `FAILED`) y motivo del fallo
+- [x] `GET /api/simulations/{id}/alert` (202 mientras está `PENDING`) y `GET /api/me/alerts`
+- [x] Timeouts, reintentos con backoff (`ResilientCall`) y límite de gasto mensual configurable (`AI_MONTHLY_BUDGET_USD`)
+- [x] Aviso legal fijo: "Contenido generado por IA; no constituye asesoría financiera"
+- [x] Pruebas con un proveedor falso; nada de llamadas reales en CI
 - [ ] (Opcional) Asistente de preguntas sobre el historial propio: `POST /api/ai/ask`
 
 ## Fase 3 — Noticias

@@ -96,9 +96,9 @@ Flujo recomendado en el frontend:
 
 | Endpoint | Rol |
 |---|---|
-| `GET /api/me`, `GET /api/me/simulations` | cualquiera autenticado |
+| `GET /api/me`, `GET /api/me/simulations`, `GET /api/me/alerts` | cualquiera autenticado |
 | `POST /api/simulations` | INVESTOR, ADMIN |
-| `GET /api/simulations/{id}` | dueño o ADMIN |
+| `GET /api/simulations/{id}`, `GET /api/simulations/{id}/alert` | dueño o ADMIN |
 | `GET /api/simulations`, `GET /api/dashboard/statistics` | ADMIN |
 | `/api/users/**` | ADMIN |
 | `GET /api/audit` | ADMIN, IT_MANAGER |

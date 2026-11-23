@@ -20,6 +20,7 @@ public record RitechProperties(
         CalcEngine calcEngine,
         Cors cors,
         Security security,
+        Ai ai,
         @DefaultValue("America/Bogota") ZoneId timezone) {
 
     public record Simulation(
@@ -55,4 +56,19 @@ public record RitechProperties(
             @DefaultValue("") String bootstrapAdminEmail,
             @DefaultValue("") String bootstrapAdminPassword,
             @DefaultValue("Administrator") String bootstrapAdminName) {}
+
+    public record Ai(
+            /* template (no external calls) | gemini */
+            @DefaultValue("template") String provider,
+            @DefaultValue("") String geminiApiKey,
+
+            @DefaultValue("https://generativelanguage.googleapis.com")
+            String geminiUrl,
+
+            @DefaultValue("gemini-2.5-flash") String geminiModel,
+            @DefaultValue("20s") Duration timeout,
+            /* Spending cap per calendar month (installation time zone); billable providers only */
+            @DefaultValue("5") BigDecimal monthlyBudgetUsd,
+            @DefaultValue("0") BigDecimal inputPricePerMtok,
+            @DefaultValue("0") BigDecimal outputPricePerMtok) {}
 }

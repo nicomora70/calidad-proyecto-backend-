@@ -83,6 +83,15 @@ jobs:
           curl -fsS "$API/api/me/simulations" -H "Authorization: Bearer $inv" | jq -e '.page.totalElements == 1'
           curl -fsS "$API/api/dashboard/statistics" -H "Authorization: Bearer $admin" | jq -e '.count == 1'
           test "$(curl -s -o /dev/null -w '%{http_code}' $API/api/dashboard/statistics -H "Authorization: Bearer $inv")" = "403"
+
+          # AI alert (template provider) is generated asynchronously: wait until it is DONE
+          sim_id=$(echo "$sim" | jq -r .id)
+          for i in $(seq 1 20); do
+            status=$(curl -fsS "$API/api/simulations/$sim_id/alert" -H "Authorization: Bearer $inv" | jq -r .status)
+            [ "$status" != "PENDING" ] && break
+            sleep 0.5
+          done
+          test "$status" = "DONE"
       - name: Logs on failure
         if: failure()
         run: docker compose logs

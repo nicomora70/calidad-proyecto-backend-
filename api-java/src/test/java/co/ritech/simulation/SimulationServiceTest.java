@@ -11,6 +11,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import co.ritech.TestFixtures;
+import co.ritech.ai.AiAlertService;
 import co.ritech.audit.AuditService;
 import co.ritech.engine.CalcEngineClient;
 import co.ritech.engine.CalcEngineClient.ReturnResult;
@@ -34,6 +35,7 @@ class SimulationServiceTest {
     private CalcEngineClient calcEngine;
     private SimulationRepository repository;
     private AuditService audit;
+    private AiAlertService aiAlerts;
     private SimulationService service;
 
     @BeforeEach
@@ -42,6 +44,7 @@ class SimulationServiceTest {
         calcEngine = mock(CalcEngineClient.class);
         repository = mock(SimulationRepository.class);
         audit = mock(AuditService.class);
+        aiAlerts = mock(AiAlertService.class);
         when(repository.save(any(Simulation.class))).thenAnswer(inv -> inv.getArgument(0));
         service = new SimulationService(
                 TestFixtures.properties(),
@@ -49,6 +52,7 @@ class SimulationServiceTest {
                 calcEngine,
                 repository,
                 audit,
+                aiAlerts,
                 Clock.fixed(now, ZoneOffset.UTC));
     }
 
@@ -56,7 +60,7 @@ class SimulationServiceTest {
     void rejectsCapitalBelowMinimum() {
         assertThatThrownBy(() -> service.simulate(null, new BigDecimal("99999.99")))
                 .isInstanceOf(InsufficientCapitalException.class);
-        verifyNoInteractions(marketService, calcEngine, repository);
+        verifyNoInteractions(marketService, calcEngine, repository, aiAlerts);
     }
 
     private Simulation ownedBy(UUID owner) {
@@ -134,5 +138,6 @@ class SimulationServiceTest {
         assertThat(result.getSymbol()).isEqualTo("QQQ");
         assertThat(result.getCreatedAt()).isEqualTo(now);
         verify(audit).record(eq(userId), eq("SIMULATION_CREATED"), eq("SIMULATION"), eq(result.getId()), any());
+        verify(aiAlerts).requestFor(result);
     }
 }

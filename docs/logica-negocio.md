@@ -95,7 +95,7 @@ Reglas:
    la guarda. Si el proveedor falla → `502 MARKET_DATA_UNAVAILABLE`.
 4. **Python** calcula rendimiento, monto final y ganancia. Si no responde → `503 CALC_ENGINE_UNAVAILABLE`.
 5. **Java** guarda la simulación (inmutable) y registra la auditoría `SIMULATION_CREATED`.
-6. *(Fase 2)* Se genera la alerta con IA en segundo plano. Es *best-effort*: si falla,
+6. Se genera la alerta con IA en segundo plano (CU-05). Es *best-effort*: si falla,
    la simulación sigue siendo válida.
 7. *(Fase 4)* Si el rendimiento supera el umbral del usuario, se le notifica.
 
@@ -118,10 +118,21 @@ variaciones históricas reales guardadas, más una simulación Monte Carlo. Siem
 presenta como estimación, no como promesa de rentabilidad.
 
 ### CU-05 Alerta con IA (Fase 2)
-Con las últimas noticias del mercado y el resultado de la simulación, el LLM redacta una
-alerta (título y contenido, máximo dos frases) que explica qué pasa en el mercado y qué
-implica para la inversión. Se guarda la alerta junto con el modelo usado, los tokens y el costo.
+1. Al guardar la simulación se crea su alerta en estado `PENDING`, en la misma transacción.
+2. Después del commit, un hilo en segundo plano la genera con el proveedor de `AI_PROVIDER`:
+   - `template` (por defecto): texto armado con reglas a partir de la simulación, sin llamadas externas.
+   - `gemini`: el LLM recibe el prompt versionado (`alert-v1`) y debe responder en JSON
+     `{title, content}`. Si el JSON no es válido, la alerta queda `FAILED`.
+3. Se guardan el modelo, la versión del prompt, los tokens y el costo (`AI_INPUT_PRICE_PER_MTOK`,
+   `AI_OUTPUT_PRICE_PER_MTOK`). Si el gasto del mes alcanza `AI_MONTHLY_BUDGET_USD`, los
+   proveedores de pago no se llaman y la alerta queda `FAILED` con motivo `BUDGET_EXCEEDED`.
+4. Un fallo del proveedor (red, 5xx tras 3 intentos, 4xx, respuesta inválida) solo marca la
+   alerta como `FAILED`; la simulación nunca se revierte.
+5. `GET /api/simulations/{id}/alert` responde 202 mientras está `PENDING` y 200 con `DONE` o
+   `FAILED`. Aplica la misma regla de dueño que la simulación.
+
 Toda alerta lleva el aviso "Contenido generado por IA; no constituye asesoría financiera".
+Las noticias se incorporan al prompt en la Fase 3.
 
 ### CU-06 Noticias (Fase 3)
 Un proceso programado descarga noticias de QQQ/NASDAQ (Alpha Vantage `NEWS_SENTIMENT`)
@@ -167,6 +178,7 @@ que el frontend usa para traducir el mensaje.
 | 403 | `FORBIDDEN` | Rol sin permiso |
 | 403 | `PASSWORD_CHANGE_REQUIRED` | Contraseña temporal: solo se permite `/api/auth/change-password`, `/api/auth/logout`, `/api/auth/refresh` y `/api/me` |
 | 404 | `USER_NOT_FOUND` / `SIMULATION_NOT_FOUND` | Recurso inexistente |
+| 404 | `AI_ALERT_NOT_FOUND` | La simulación no tiene alerta (creada antes de la Fase 2) |
 | 409 | `EMAIL_ALREADY_EXISTS` | Correo duplicado |
 | 409 | `LAST_ADMIN` | Se intenta quitar o eliminar al último ADMIN |
 | 409 | `LICENSE_USER_LIMIT` | Se superó el máximo de usuarios de la licencia |

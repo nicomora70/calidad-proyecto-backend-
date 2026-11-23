@@ -93,4 +93,5 @@ equipo hay que agregar `ports: ["5432:5432"]`.
 - **Fase 0** ✅ base del proyecto
 - **Fase 1** ✅ autenticación JWT, usuarios, roles, historial, auditoría, resiliencia, logs en
   JSON con `traceId` y controles de calidad en CI
-- Siguientes: IA integrada, noticias y notificaciones (ver [task.md](task.md))
+- **Fase 2** ✅ alertas con IA asíncronas (`AI_PROVIDER=template` o `gemini`) con límite de gasto
+- Siguientes: noticias y notificaciones (ver [task.md](task.md))

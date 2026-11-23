@@ -30,6 +30,15 @@ public final class TestFixtures {
                         "",
                         "",
                         "Administrator"),
+                new RitechProperties.Ai(
+                        "template",
+                        "",
+                        "http://unused",
+                        "gemini-test",
+                        Duration.ofSeconds(1),
+                        new BigDecimal("5"),
+                        new BigDecimal("0.30"),
+                        new BigDecimal("2.50")),
                 ZoneId.of("America/Bogota"));
     }
 }
