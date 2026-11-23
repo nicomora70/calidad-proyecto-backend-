@@ -35,6 +35,8 @@ jobs:
           severity: CRITICAL
           ignore-unfixed: true
           exit-code: "1"
+          # Accepted findings with reason and expiry (only api-java has one)
+          trivyignores: ${{ matrix.context }}/.trivyignore
       # HIGH ones are reported in the log without failing the build
       - uses: aquasecurity/trivy-action@v0.36.0
         if: always()
@@ -43,6 +45,7 @@ jobs:
           severity: HIGH
           ignore-unfixed: true
           exit-code: "0"
+          trivyignores: ${{ matrix.context }}/.trivyignore
 
   dependency-check:
     if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'

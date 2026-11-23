@@ -53,5 +53,10 @@ Estado: ✅ cumple · 🟡 parcial · ⬜ pendiente · N/A no aplica.
 3. El límite por IP usa `X-Forwarded-For`: el puerto 8080 solo debe ser accesible desde el proxy
    (firewall con 80/443 abiertos, como indica `instalacion-cliente.md`); si no, un atacante puede
    falsear su IP. El bloqueo por cuenta (5 intentos) sigue protegiendo en ese caso.
-4. El rate limiting vive en memoria: con varias réplicas de la API cada una cuenta por separado.
+4. **Riesgo aceptado (14.2.1)**: dos CVE críticos de spring-webmvc 6.2.19 (CVE-2026-47884 en `XsltView`
+   y CVE-2026-47890 en SSE con vistas) solo tienen corrección en Spring Framework 7 (Spring Boot 4).
+   La API no usa ninguna de las dos funciones, así que quedan en `api-java/.trivyignore` con vencimiento
+   2027-02-28. Antes de esa fecha, o antes de construir el SSE opcional, hay que migrar a Spring Boot 4.
+   Tomcat se fijó en 10.1.62 (`tomcat.version`) para corregir otros 5 CVE críticos.
+5. El rate limiting vive en memoria: con varias réplicas de la API cada una cuenta por separado.
    Con una instalación por cliente (una réplica) es suficiente; si se escala, se pasa Bucket4j a Postgres o Redis.
