@@ -11,7 +11,7 @@ Proceso: identificar → analizar → evaluar → tratar → seguir y revisar. S
 | R-03 | Ataque de fuerza bruta a las cuentas | Login sin límite | 4 | 4 | 16 | Mitigar | Bloqueo tras 5 intentos; rate limiting en Fase 6 | Medio (8) |
 | R-04 | Caída o límite de Alpha Vantage (25 llamadas/día) | Dependencia externa gratuita | 4 | 3 | 12 | Mitigar | Caché de 6 h, advisory lock, reintento y circuit breaker; plan de proveedor de pago | Bajo (6) |
 | R-05 | Motor de cálculo no disponible | Fallo del contenedor Python | 2 | 4 | 8 | Mitigar | Healthcheck, `restart: unless-stopped`, reintento y error `503` claro | Bajo (4) |
-| R-06 | Pérdida de la base de datos del cliente | Sin respaldos | 2 | 5 | 10 | Mitigar | Volumen persistente; `pg_dump` diario en Fase 5 | Medio hasta la Fase 5 |
+| R-06 | Pérdida de la base de datos del cliente | Sin respaldos | 2 | 5 | 10 | Mitigar | Volumen persistente; `pg_dump` diario con retención y restauración probada en CI | Bajo (4), si el cliente copia los respaldos fuera del servidor |
 | R-07 | Filtración de secretos (`JWT_SECRET`, claves de API) | Subir `.env` o claves por defecto | 2 | 5 | 10 | Mitigar | `.env` ignorado por git, la API no arranca sin secreto fuerte | Bajo (4) |
 | R-08 | Vulnerabilidad en dependencias | Librerías desactualizadas | 3 | 4 | 12 | Mitigar | Spring Boot en el último parche; Dependabot y Trivy en Fase 6 | Medio hasta la Fase 6 |
 | R-09 | El usuario toma la IA o las proyecciones como asesoría financiera | Texto de IA persuasivo | 3 | 4 | 12 | Mitigar / Transferir | Aviso legal fijo en cada alerta y en los términos de uso | Medio |

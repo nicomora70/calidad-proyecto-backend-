@@ -79,9 +79,12 @@ veces el mismo evento.
 `user_id` (PK), `email_enabled`, `in_app_enabled`, `variation_threshold_pct NUMERIC(6,2)` y
 `updated_at`. Sin fila, se aplican los valores por defecto de la instalación.
 
-## Tablas planeadas
+### licenses (V6)
+Historial de licencias instaladas (la más reciente es la vigente): `license_id`, `company`,
+`plan`, `max_users`, `issued_at`, `expires_at`, `payload` y `signature` tal como se firmaron
+(se verifican otra vez al arrancar), `installed_at` e `installed_by`.
 
-| Migración | Tabla | Propósito |
-|---|---|---|
-| V6 (Fase 5) | `license` | company_name, max_users, modules, expires_at, signature, loaded_at |
-| V6 (Fase 5) | `settings` | clave/valor por instalación (marca, logo, textos legales) |
+### settings (V6)
+Clave/valor por instalación (`setting_key`, `setting_value`, `updated_at`). Hoy guarda el
+branding: `branding.productName`, `branding.companyName`, `branding.primaryColor`,
+`branding.logoUrl` y `branding.legalNotice`.

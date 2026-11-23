@@ -54,3 +54,29 @@ class SentimentResponse(BaseModel):
     bullish_count: int
     neutral_count: int
     bearish_count: int
+
+
+class ProjectionRequest(BaseModel):
+    initial_capital: Decimal = Field(gt=0)
+    daily_variations_pct: list[Annotated[Decimal, Field(ge=-100, le=100)]] = Field(min_length=5)
+    horizon_days: int = Field(ge=1, le=252)
+    simulations: int = Field(default=10_000, ge=1_000, le=50_000)
+    seed: int | None = None
+
+
+class ScenarioOut(BaseModel):
+    final_amount: Decimal
+    profit: Decimal
+    return_pct: Decimal
+
+
+class ProjectionResponse(BaseModel):
+    horizon_days: int
+    simulations: int
+    sample_size: int
+    leverage: Decimal
+    pessimistic: ScenarioOut
+    base: ScenarioOut
+    optimistic: ScenarioOut
+    expected_final_amount: Decimal
+    probability_of_loss_pct: Decimal

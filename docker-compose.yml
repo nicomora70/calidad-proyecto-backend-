@@ -60,6 +60,8 @@ services:
       MAIL_STARTTLS: ${MAIL_STARTTLS:-true}
       MAIL_FROM: ${MAIL_FROM:-RiTech <no-reply@ritech.local>}
       NOTIFICATION_VARIATION_THRESHOLD_PCT: ${NOTIFICATION_VARIATION_THRESHOLD_PCT:-2.00}
+      LICENSE_MODE: ${LICENSE_MODE:-disabled}
+      LICENSE_FILE: /app/license/license.json
       CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:3000}
       JWT_SECRET: ${JWT_SECRET:?JWT_SECRET must be set in .env (at least 32 characters)}
       ACCESS_TOKEN_TTL: ${ACCESS_TOKEN_TTL:-15m}
@@ -72,6 +74,29 @@ services:
       LOGGING_STRUCTURED_ECS_SERVICE_NAME: ritech-api
     ports:
       - "${API_PORT:-8080}:8080"
+    volumes:
+      # license.json from the vendor; installed on first boot (renewals: POST /api/license)
+      - ${LICENSE_DIR:-./license}:/app/license:ro
+    networks: [internal]
+
+  # Daily pg_dump with retention. Restore: see docs/instalacion-cliente.md
+  pg-backup:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      PGHOST: postgres
+      PGDATABASE: ${POSTGRES_DB:-ritech}
+      PGUSER: ${POSTGRES_USER:-ritech}
+      PGPASSWORD: ${POSTGRES_PASSWORD:-ritech}
+      BACKUP_INTERVAL_HOURS: ${BACKUP_INTERVAL_HOURS:-24}
+      BACKUP_RETENTION_DAYS: ${BACKUP_RETENTION_DAYS:-14}
+    volumes:
+      - ./ops/backup:/scripts:ro
+      - ${BACKUP_DIR:-./backups}:/backups
+    entrypoint: ["sh", "/scripts/loop.sh"]
     networks: [internal]
 
 networks:

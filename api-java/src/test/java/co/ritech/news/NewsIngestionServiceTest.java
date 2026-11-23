@@ -80,7 +80,8 @@ class NewsIngestionServiceTest {
         provider = new FakeProvider();
         repository = mock(NewsArticleRepository.class);
         when(repository.findExistingUrls(anyCollection())).thenReturn(Set.of());
-        service = new NewsIngestionService(provider, repository, TestFixtures.properties(), clock);
+        service = new NewsIngestionService(
+                provider, repository, TestFixtures.properties(), TestFixtures.allModules(), clock);
     }
 
     private static NewsItem item(String url) {
@@ -156,7 +157,8 @@ class NewsIngestionServiceTest {
                 throw new NewsExceptions.NewsUnavailableException("down");
             }
         };
-        var scheduled = new NewsIngestionService(failing, repository, TestFixtures.properties(), clock);
+        var scheduled = new NewsIngestionService(
+                failing, repository, TestFixtures.properties(), TestFixtures.allModules(), clock);
 
         assertThatCode(scheduled::scheduledRefresh).doesNotThrowAnyException();
     }

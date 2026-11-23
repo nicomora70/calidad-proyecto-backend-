@@ -14,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import co.ritech.audit.AuditService;
 import co.ritech.auth.RefreshTokenRepository;
+import co.ritech.license.LicenseService;
 import co.ritech.security.CurrentUser;
 import co.ritech.user.UserDtos.CreateUserRequest;
 import co.ritech.user.UserDtos.UpdateUserRequest;
@@ -29,6 +30,7 @@ public class UserService {
     private final RefreshTokenRepository refreshTokens;
     private final PasswordEncoder passwordEncoder;
     private final AuditService audit;
+    private final LicenseService license;
     private final Clock clock;
 
     public UserService(
@@ -36,11 +38,13 @@ public class UserService {
             RefreshTokenRepository refreshTokens,
             PasswordEncoder passwordEncoder,
             AuditService audit,
+            LicenseService license,
             Clock clock) {
         this.users = users;
         this.refreshTokens = refreshTokens;
         this.passwordEncoder = passwordEncoder;
         this.audit = audit;
+        this.license = license;
         this.clock = clock;
     }
 
@@ -50,6 +54,7 @@ public class UserService {
         if (users.existsByEmailAndDeletedAtIsNull(email)) {
             throw new EmailAlreadyExistsException(email);
         }
+        license.checkUserLimit();
         User user = new User(
                 request.fullName(),
                 email,

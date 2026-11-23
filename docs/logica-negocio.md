@@ -67,7 +67,11 @@ Estadísticas del dashboard (también en Python):
 | Dashboard global de estadísticas | — | — | ✅ |
 | Crear, desactivar, eliminar usuarios y cambiar roles | — | — | ✅ |
 | Ver auditoría, salud del sistema y estado de la licencia | — | ✅ | ✅ |
-| Cargar o renovar la licencia | — | ✅ | — |
+| Cargar o renovar la licencia | — | ✅ | ✅ |
+| Proyección de escenarios (plan Empresarial) | ✅ | — | ✅ |
+| Exportar su historial a CSV | ✅ | — | ✅ |
+| Exportar historial global y auditoría a CSV | — | auditoría | ✅ |
+| Cambiar la marca (branding) | — | — | ✅ |
 
 Reglas:
 
@@ -112,10 +116,16 @@ Java lee las simulaciones (filtradas por rango de fechas o usuario) y Python cal
 estadísticas de la sección 3.
 
 ### CU-04 Escenarios y proyección (paquete Empresarial)
-Dado un capital y un horizonte de N días hábiles, Python calcula tres escenarios
-(pesimista = percentil 10, base = mediana, optimista = percentil 90) a partir de las
-variaciones históricas reales guardadas, más una simulación Monte Carlo. Siempre se
-presenta como estimación, no como promesa de rentabilidad.
+1. El usuario envía `initialCapital` y `horizonDays` (1 a 252 días hábiles).
+2. **Java** valida el capital mínimo y toma las últimas 250 variaciones diarias guardadas. Si hay
+   menos de 5, responde `422 INSUFFICIENT_MARKET_HISTORY`.
+3. **Python** simula 10.000 trayectorias con *bootstrap* histórico: sortea variaciones reales
+   con reemplazo, aplica 2x por día y compone. Una trayectoria que llega a 0 se queda en 0, igual
+   que el tope de pérdida de la simulación.
+4. Devuelve los escenarios pesimista (P10), base (P50) y optimista (P90) con monto final,
+   ganancia y rendimiento, además del valor esperado y la probabilidad de pérdida.
+5. No se guarda: es una estimación. Queda la auditoría `PROJECTION_CREATED` y la respuesta lleva
+   el aviso de que no es una promesa de rentabilidad.
 
 ### CU-05 Alerta con IA (Fase 2)
 1. Al guardar la simulación se crea su alerta en estado `PENDING`, en la misma transacción.
@@ -174,13 +184,41 @@ Entrega:
 5. `PATCH /api/me/notifications/{id}/read` es idempotente; una notificación ajena → 404.
 
 ### CU-08 Licencia
-Al arrancar, la API valida la firma (Ed25519) del archivo de licencia: empresa, fecha de
-vencimiento, máximo de usuarios y módulos habilitados.
-- Licencia vigente → todo funciona según los módulos.
-- 30 días antes del vencimiento → aviso a IT_MANAGER/ADMIN.
-- Vencida → **modo solo lectura**: se puede consultar, pero no simular ni crear usuarios
-  (`402 LICENSE_EXPIRED`).
-- Al crear un usuario por encima del máximo → `409 LICENSE_USER_LIMIT`.
+El archivo `ritech-license-v1` trae el `payload` (JSON en base64 con empresa, plan, `maxUsers`,
+`issuedAt` y `expiresAt`) y su firma Ed25519. RiTech lo emite con su clave privada
+(`tools/license`) y la API lo verifica con la clave pública incluida en la imagen.
+
+| `LICENSE_MODE` | Comportamiento |
+|---|---|
+| `disabled` (desarrollo, demo, CI) | Estado `DISABLED`: todos los módulos activos, sin límites |
+| `enforced` (clientes) | Módulos según el plan; límites y vencimiento aplicados |
+
+- Al arrancar se vuelve a verificar la última licencia guardada. Si no hay ninguna, se instala
+  `LICENSE_FILE`. Renovación: `POST /api/license` (IT_MANAGER o ADMIN), sin reiniciar.
+- Una licencia con firma inválida, formato desconocido o ya vencida → `400 LICENSE_INVALID`.
+- Estados: `ACTIVE`; `EXPIRING` (≤ 30 días; avisos a IT_MANAGER/ADMIN a 30 y 7 días);
+  `EXPIRED` (desde el día siguiente a `expiresAt`); `MISSING` (no hay licencia).
+- `EXPIRED` o `MISSING` → **modo solo lectura**: toda escritura responde `402 LICENSE_EXPIRED`,
+  salvo `/api/auth/**` y `/api/license`. Las consultas siguen funcionando.
+- Módulo fuera del plan → `403 MODULE_NOT_LICENSED`. Los procesos en segundo plano del módulo
+  (alertas IA, descarga de noticias, notificaciones) tampoco corren. Los avisos de seguridad y
+  de licencia se envían en todos los planes.
+- Crear un usuario con `maxUsers` usuarios activos → `409 LICENSE_USER_LIMIT`.
+
+| Plan | Módulos |
+|---|---|
+| `BASIC` | `SIMULATIONS`, `DASHBOARD` |
+| `PROFESSIONAL` | + `AI_ALERTS`, `NEWS`, `NOTIFICATIONS`, `EXPORTS` |
+| `ENTERPRISE` | + `PROJECTIONS` |
+
+### CU-10 Exportes y branding
+- CSV (UTF-8 con BOM, para Excel): `GET /api/me/simulations/export`, `GET /api/simulations/export`
+  (ADMIN) y `GET /api/audit/export` (ADMIN, IT_MANAGER). Máximo 50.000 filas por archivo; las
+  celdas de texto que empiezan con `= + - @` se neutralizan (inyección de fórmulas). Cada
+  exportación queda auditada (`EXPORT_CREATED`).
+- `GET /api/settings/branding` es público (pantalla de inicio de sesión): nombre del producto,
+  empresa (por defecto, la de la licencia), color `#RRGGBB`, logo `https://` y aviso legal.
+  `PUT` (ADMIN); un campo vacío vuelve al valor por defecto.
 
 ### CU-09 Auditoría
 Se registra: inicio de sesión (con éxito y fallido), creación, eliminación y cambio de rol
@@ -198,6 +236,9 @@ que el frontend usa para traducir el mensaje.
 | 400 | `BAD_REQUEST` | Petición mal formada (JSON inválido, UUID inválido en la URL…) |
 | 400 | `INSUFFICIENT_CAPITAL` | Capital por debajo del mínimo |
 | 400 | `INVALID_DATE_RANGE` | `from` es posterior a `to` |
+| 400 | `LICENSE_INVALID` | Licencia con firma inválida, formato desconocido, datos incorrectos o ya vencida |
+| 403 | `MODULE_NOT_LICENSED` | El módulo no está en el plan de la licencia |
+| 422 | `INSUFFICIENT_MARKET_HISTORY` | Menos de 5 días de mercado guardados para proyectar |
 | 400 | `INVALID_CURRENT_PASSWORD` | La contraseña actual no coincide al cambiarla |
 | 400 | `PASSWORD_REUSED` | La nueva contraseña es igual a la actual |
 | 401 | `UNAUTHORIZED` | Falta el token o es inválido |

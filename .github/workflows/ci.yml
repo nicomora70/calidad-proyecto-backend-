@@ -109,6 +109,29 @@ jobs:
           curl -fsS "$API/api/me/notification-preferences" -H "Authorization: Bearer $inv" | jq -e '.emailAvailable == false'
           curl -fsS -X POST "$API/api/me/notifications/read-all" -H "Authorization: Bearer $inv" | jq -e '.updated >= 1'
           curl -fsS "$API/actuator/health" | jq -e '.status == "UP"'
+
+          # Phase 5: public branding, license disabled in CI, projection needs 5 market days (only 1 here)
+          curl -fsS "$API/api/settings/branding" | jq -e '.productName == "RiTech"'
+          curl -fsS "$API/api/license" -H "Authorization: Bearer $admin" | jq -e '.state == "DISABLED"'
+          code=$(curl -s -o /dev/null -w '%{http_code}' -X POST $API/api/projections \
+            -H 'Content-Type: application/json' -H "Authorization: Bearer $inv" -d '{"initialCapital": 1000000, "horizonDays": 20}')
+          test "$code" = "422"
+          curl -fsS "$API/api/me/simulations/export" -H "Authorization: Bearer $inv" -o mine.csv
+          grep -q "1000000.00" mine.csv
+      - name: Backup and restore are verified (25010 recoverability)
+        run: |
+          set -e
+          docker compose exec -T pg-backup sh /scripts/backup.sh
+          dump=$(docker compose exec -T pg-backup sh -c 'ls -t /backups/ritech-*.dump | head -1' | tr -d '\r')
+          docker compose exec -T pg-backup sh /scripts/restore.sh "$dump" ritech_restore_check
+          live=$(docker compose exec -T pg-backup psql -tAc "select count(*) from simulations" | tr -d '\r')
+          restored=$(docker compose exec -T pg-backup psql -d ritech_restore_check -tAc "select count(*) from simulations" | tr -d '\r')
+          echo "simulations live=$live restored=$restored"
+          test "$live" -ge 1 && test "$live" = "$restored"
+          # Restoring over the live database is refused without --yes
+          if docker compose exec -T pg-backup sh /scripts/restore.sh "$dump" ritech; then
+            echo "restore over the live database must require --yes"; exit 1
+          fi
       - name: Logs on failure
         if: failure()
         run: docker compose logs

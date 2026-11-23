@@ -13,6 +13,7 @@ import org.springframework.data.jpa.domain.Specification;
 
 import co.ritech.ai.AiAlertReady;
 import co.ritech.audit.SecurityEventRecorded;
+import co.ritech.license.LicenseExpiringSoon;
 import co.ritech.market.MarketVariationFetched;
 import co.ritech.notification.NotificationEnums.NotificationType;
 import co.ritech.user.Role;
@@ -121,6 +122,32 @@ class NotificationTriggersTest {
                         eq("Cuenta bloqueada por intentos fallidos"),
                         contains("ana@c.co"),
                         isNull());
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void licenseExpiringUsesOneNoticePerWindow() {
+        User it = new User("IT", "it@c.co", Role.IT_MANAGER, "h", false, now);
+        when(users.findAll(any(Specification.class))).thenReturn(List.of(it));
+        LocalDate expires = LocalDate.of(2026, 12, 23);
+
+        triggers.onLicenseExpiring(new LicenseExpiringSoon("RT-1", "Cliente", expires, 30));
+        triggers.onLicenseExpiring(new LicenseExpiringSoon("RT-1", "Cliente", expires, 7));
+
+        verify(notifications)
+                .notify(
+                        eq(it.getId()),
+                        eq(NotificationType.LICENSE_EXPIRING),
+                        eq("La licencia vence en 30 días"),
+                        anyString(),
+                        eq("LICENSE_EXPIRING:RT-1:2026-12-23:30"));
+        verify(notifications)
+                .notify(
+                        eq(it.getId()),
+                        eq(NotificationType.LICENSE_EXPIRING),
+                        eq("La licencia vence en 7 días"),
+                        anyString(),
+                        eq("LICENSE_EXPIRING:RT-1:2026-12-23:7"));
     }
 
     @Test

@@ -48,7 +48,12 @@ class NotificationServiceTest {
         when(preferences.save(any(NotificationPreference.class))).thenAnswer(inv -> inv.getArgument(0));
         when(preferences.findById(userId)).thenReturn(Optional.empty());
         service = new NotificationService(
-                repository, preferences, email, TestFixtures.properties(), Clock.fixed(now, ZoneOffset.UTC));
+                repository,
+                preferences,
+                email,
+                TestFixtures.properties(),
+                TestFixtures.allModules(),
+                Clock.fixed(now, ZoneOffset.UTC));
     }
 
     private void notifyOnce(String dedupeKey) {

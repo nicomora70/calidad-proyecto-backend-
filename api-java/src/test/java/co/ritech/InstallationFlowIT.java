@@ -2,6 +2,9 @@ package co.ritech;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.nio.charset.StandardCharsets;
+import java.time.LocalDate;
+import java.time.ZoneOffset;
 import java.util.UUID;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -22,12 +25,18 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import com.jayway.jsonpath.JsonPath;
 
 import co.ritech.engine.CalcEngineClient;
+import co.ritech.engine.CalcEngineClient.ProjectionResult;
 import co.ritech.engine.CalcEngineClient.ReturnResult;
+import co.ritech.engine.CalcEngineClient.Scenario;
 import co.ritech.engine.CalcEngineClient.SentimentResult;
 import co.ritech.engine.CalcEngineClient.StatisticsResult;
+import co.ritech.market.MarketQuote;
+import co.ritech.market.MarketVariation;
+import co.ritech.market.MarketVariationRepository;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -69,6 +78,9 @@ class InstallationFlowIT {
     @MockitoBean
     private CalcEngineClient calcEngine;
 
+    @Autowired
+    private MarketVariationRepository marketVariations;
+
     @BeforeEach
     void stubEngine() {
         when(calcEngine.calculateReturn(any(), any())).thenAnswer(inv -> {
@@ -86,6 +98,18 @@ class InstallationFlowIT {
                     finalAmount.subtract(capital).setScale(2),
                     false);
         });
+        var scenario = new Scenario(new BigDecimal("1010000.00"), new BigDecimal("10000.00"), BigDecimal.ONE);
+        when(calcEngine.calculateProjection(any(), any(), anyInt()))
+                .thenReturn(new ProjectionResult(
+                        20,
+                        10000,
+                        5,
+                        BigDecimal.TWO,
+                        scenario,
+                        scenario,
+                        scenario,
+                        new BigDecimal("1010000.00"),
+                        new BigDecimal("40.0000")));
         when(calcEngine.calculateSentiment(any()))
                 .thenAnswer(inv -> new SentimentResult(
                         ((java.util.List<?>) inv.getArgument(0)).size(), BigDecimal.ZERO, "Neutral", 0, 0, 0));
@@ -246,6 +270,53 @@ class InstallationFlowIT {
     }
 
     @Test
+    void projectionsExportsAndBranding() throws Exception {
+        String adminToken = adminToken();
+
+        // Five stored market days in the past. fetchedAt is also in the past: with "now" they would
+        // become the fresh cached variation and change the result of the other tests (shared DB).
+        for (int i = 1; i <= 5; i++) {
+            var day = LocalDate.of(2026, 1, i + 4);
+            if (marketVariations.findBySymbolAndMarketDate("QQQ", day).isEmpty()) {
+                marketVariations.save(new MarketVariation(
+                        new MarketQuote("QQQ", day, new BigDecimal(i - 3), "TEST"),
+                        day.atTime(21, 0).toInstant(ZoneOffset.UTC)));
+            }
+        }
+        postJson("/api/projections", adminToken, "{\"initialCapital\": 1000000, \"horizonDays\": 20}")
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.projection.result.base.finalAmount").value(1010000.00))
+                .andExpect(jsonPath("$.projection.result.probabilityOfLossPct").value(40.0))
+                .andExpect(jsonPath("$.projection.currency").value("COP"))
+                .andExpect(jsonPath("$.disclaimer").exists());
+        postJson("/api/projections", adminToken, "{\"initialCapital\": 1000000, \"horizonDays\": 253}")
+                .andExpect(status().isBadRequest());
+
+        // Audit export (CSV) includes the projection
+        String csv = mvc.perform(get("/api/audit/export").header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString(StandardCharsets.UTF_8);
+        assertThat(csv).startsWith("\uFEFFid,created_at").contains("PROJECTION_CREATED");
+
+        // Branding: ADMIN updates it, anyone (even without a token) reads it
+        mvc.perform(put("/api/settings/branding")
+                        .header("Authorization", "Bearer " + adminToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"productName\":\"Mi Marca\",\"primaryColor\":\"#112233\"}"))
+                .andExpect(status().isOk());
+        mvc.perform(get("/api/settings/branding"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.productName").value("Mi Marca"))
+                .andExpect(jsonPath("$.primaryColor").value("#112233"));
+
+        // License checks are off in this installation (LICENSE_MODE=disabled)
+        mvc.perform(get("/api/license").header("Authorization", "Bearer " + adminToken))
+                .andExpect(jsonPath("$.state").value("DISABLED"));
+    }
+
+    @Test
     void newsAreIngestedOnStartupAndDeduplicated() throws Exception {
         String adminToken = adminToken();
 
@@ -265,7 +336,9 @@ class InstallationFlowIT {
 
         mvc.perform(get("/api/news/sentiment").header("Authorization", "Bearer " + adminToken))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.sentiment.label").exists());
+                .andExpect(jsonPath("$.sentiment.label").exists())
+                .andExpect(jsonPath("$.sentiment.meanScore").exists())
+                .andExpect(jsonPath("$.sentiment.mean_score").doesNotExist());
     }
 
     @Test

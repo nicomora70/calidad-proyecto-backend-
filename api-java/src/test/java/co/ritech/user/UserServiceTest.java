@@ -11,6 +11,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
+import co.ritech.TestFixtures;
 import co.ritech.audit.AuditService;
 import co.ritech.auth.RefreshTokenRepository;
 import co.ritech.security.CurrentUser;
@@ -46,6 +47,7 @@ class UserServiceTest {
                 tokens,
                 new BCryptPasswordEncoder(4),
                 mock(AuditService.class),
+                TestFixtures.allModules(),
                 Clock.fixed(now, ZoneOffset.UTC));
         admin = new User("Admin", "admin@example.com", Role.ADMIN, "hash", false, now);
         when(users.findByIdAndDeletedAtIsNull(admin.getId())).thenReturn(Optional.of(admin));

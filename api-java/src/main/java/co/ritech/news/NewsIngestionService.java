@@ -15,6 +15,8 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import co.ritech.config.RitechProperties;
+import co.ritech.license.LicenseModel.Module;
+import co.ritech.license.LicenseService;
 import co.ritech.news.NewsExceptions.NewsQuotaExceededException;
 
 /**
@@ -32,16 +34,22 @@ public class NewsIngestionService {
     private final NewsProvider provider;
     private final NewsArticleRepository repository;
     private final RitechProperties properties;
+    private final LicenseService license;
     private final Clock clock;
 
     private LocalDate quotaDay;
     private int callsToday;
 
     public NewsIngestionService(
-            NewsProvider provider, NewsArticleRepository repository, RitechProperties properties, Clock clock) {
+            NewsProvider provider,
+            NewsArticleRepository repository,
+            RitechProperties properties,
+            LicenseService license,
+            Clock clock) {
         this.provider = provider;
         this.repository = repository;
         this.properties = properties;
+        this.license = license;
         this.clock = clock;
     }
 
@@ -78,6 +86,9 @@ public class NewsIngestionService {
     }
 
     private void refreshQuietly() {
+        if (!license.hasModule(Module.NEWS)) {
+            return;
+        }
         try {
             refresh();
         } catch (RuntimeException ex) {

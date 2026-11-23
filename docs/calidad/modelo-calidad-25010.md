@@ -55,7 +55,7 @@ producto para desarrolladores**:
 | Disponibilidad | Healthchecks de los 3 servicios | Presentes y usados por `depends_on` | `docker-compose.yml`, Actuator | ✅ |
 | Tolerancia a fallos | Dependencias externas con reintento y circuit breaker | 2/2 (calc-engine, Alpha Vantage) | `ResilientCall` + `ResilientCallTest` | ✅ |
 | Tolerancia a fallos | Fallos de la IA que revierten la simulación | 0 (las alertas son *best-effort*) | Diseño Fase 2 | ⬜ |
-| Recuperabilidad | Respaldo diario y restauración probada | RPO ≤ 24 h, RTO ≤ 2 h | `pg-backup` (Fase 5) | ⬜ |
+| Recuperabilidad | Respaldo diario y restauración probada | RPO ≤ 24 h, RTO ≤ 2 h | `pg-backup`; restauración verificada en cada CI | ✅ RPO 24 h |
 
 ### 2.6 Seguridad
 | Subcaracterística | Métrica | Meta | Evidencia | Estado |
@@ -89,7 +89,7 @@ producto para desarrolladores**:
 ### 2.9 Protección (*safety*, nueva en la versión 2023)
 | Subcaracterística | Métrica | Meta | Evidencia | Estado |
 |---|---|---|---|---|
-| Restricción operativa | Modo solo lectura si la licencia vence | Sí | Fase 5 | ⬜ |
+| Restricción operativa | Modo solo lectura si la licencia vence | Sí | `LicenseInterceptor`, `LicenseFlowIT` | ✅ |
 | Identificación de riesgos / advertencia | Las salidas de IA y las proyecciones llevan aviso de "no es asesoría financiera" | 100 % | Fase 2 y Fase 5 | ⬜ |
 | A prueba de fallos | Pérdida máxima limitada al capital (el monto nunca es negativo) | Sí | `test_loss_is_capped_at_capital` | ✅ |
 
