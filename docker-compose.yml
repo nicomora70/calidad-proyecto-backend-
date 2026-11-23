@@ -1,0 +1,54 @@
+# RiTech backend - one installation per client.
+# Usage: cp .env.example .env && docker compose up -d --build
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-ritech}
+      POSTGRES_USER: ${POSTGRES_USER:-ritech}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-ritech}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    networks: [internal]
+
+  calc-engine:
+    build: ./calc-engine
+    restart: unless-stopped
+    # No published port: only reachable from the internal network.
+    expose: ["8000"]
+    networks: [internal]
+
+  api:
+    build: ./api-java
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      calc-engine:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-ritech}
+      DATABASE_USER: ${POSTGRES_USER:-ritech}
+      DATABASE_PASSWORD: ${POSTGRES_PASSWORD:-ritech}
+      CALC_ENGINE_URL: http://calc-engine:8000
+      MARKET_PROVIDER: ${MARKET_PROVIDER:-fixed}
+      ALPHAVANTAGE_API_KEY: ${ALPHAVANTAGE_API_KEY:-}
+      FIXED_VARIATION_PCT: ${FIXED_VARIATION_PCT:-1.0}
+      MARKET_CACHE_TTL: ${MARKET_CACHE_TTL:-6h}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:3000}
+    ports:
+      - "${API_PORT:-8080}:8080"
+    networks: [internal]
+
+networks:
+  internal:
+
+volumes:
+  pgdata:

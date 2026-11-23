@@ -1,0 +1,65 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  calc-engine:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: calc-engine
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements-dev.txt
+      - run: pytest -q
+
+  api-java:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: api-java
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+      - run: chmod +x mvnw && ./mvnw -B verify
+
+  smoke-test:
+    needs: [calc-engine, api-java]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Start stack
+        run: docker compose up -d --build --wait --wait-timeout 300
+      - name: Health
+        run: curl -fsS http://localhost:8080/api/health
+      - name: Simulation (1.000.000 COP, fixed variation 1% -> return 2%)
+        run: |
+          body=$(curl -fsS -X POST http://localhost:8080/api/simulations \
+            -H 'Content-Type: application/json' -d '{"initialCapital": 1000000}')
+          echo "$body"
+          echo "$body" | grep -q '"finalAmount":1020000.00'
+      - name: Capital below minimum is rejected with 400
+        run: |
+          code=$(curl -s -o /dev/null -w '%{http_code}' -X POST http://localhost:8080/api/simulations \
+            -H 'Content-Type: application/json' -d '{"initialCapital": 50000}')
+          test "$code" = "400"
+      - name: History and dashboard
+        run: |
+          curl -fsS "http://localhost:8080/api/simulations?page=0&size=5"
+          curl -fsS http://localhost:8080/api/dashboard/statistics
+      - name: Logs on failure
+        if: failure()
+        run: docker compose logs
+      - name: Stop stack
+        if: always()
+        run: docker compose down -v
