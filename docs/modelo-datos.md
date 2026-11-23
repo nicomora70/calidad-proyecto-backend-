@@ -68,11 +68,20 @@ Una por simulación (`simulation_id` único), con `user_id` para listar las prop
 `sentiment_score NUMERIC(6,4)` en [−1, 1] (puede ser nulo), `sentiment_label`, `fetched_at`.
 Índice por `published_at DESC` para el feed y para los titulares de la IA.
 
+### notifications (V5)
+Una fila por usuario y canal (`IN_APP` o `EMAIL`): `type`, `title`, `body`, `status`
+(`PENDING`, `SENT`, `FAILED`), `attempts`, `next_attempt_at`, `last_error`, `dedupe_key`,
+`created_at`, `sent_at` y `read_at`. Las filas `EMAIL` son la outbox (índice parcial sobre
+`PENDING`). El índice único parcial `(user_id, channel, dedupe_key)` impide notificar dos
+veces el mismo evento.
+
+### notification_preferences (V5)
+`user_id` (PK), `email_enabled`, `in_app_enabled`, `variation_threshold_pct NUMERIC(6,2)` y
+`updated_at`. Sin fila, se aplican los valores por defecto de la instalación.
+
 ## Tablas planeadas
 
 | Migración | Tabla | Propósito |
 |---|---|---|
-| V5 (Fase 4) | `notifications` | user_id, type, channel, title, body, read_at, sent_at, status |
-| V5 (Fase 4) | `notification_preferences` | user_id, email_enabled, in_app_enabled, variation_threshold_pct |
 | V6 (Fase 5) | `license` | company_name, max_users, modules, expires_at, signature, loaded_at |
 | V6 (Fase 5) | `settings` | clave/valor por instalación (marca, logo, textos legales) |

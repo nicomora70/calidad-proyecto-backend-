@@ -117,6 +117,7 @@ class AiAlertServiceTest {
         // 1M input tokens x 0.30 + 0.2M output tokens x 2.50 = 0.80 USD
         assertThat(alert.getCostUsd()).isEqualByComparingTo("0.80");
         assertThat(alert.getCompletedAt()).isEqualTo(now);
+        verify(events).publishEvent(new AiAlertReady(alert.getUserId(), alert.getSimulationId(), "Título"));
     }
 
     @Test
@@ -128,6 +129,7 @@ class AiAlertServiceTest {
 
         assertThat(alert.getStatus()).isEqualTo(AiAlertStatus.FAILED);
         assertThat(alert.getFailureReason()).isEqualTo("Could not reach Gemini");
+        verify(events, never()).publishEvent(any(AiAlertReady.class));
     }
 
     @Test

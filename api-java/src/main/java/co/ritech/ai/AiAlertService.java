@@ -87,6 +87,9 @@ public class AiAlertService {
             alert.markFailed(ex.getMessage(), clock.instant());
         }
         repository.save(alert);
+        if (alert.getStatus() == AiAlertStatus.DONE) {
+            events.publishEvent(new AiAlertReady(alert.getUserId(), alert.getSimulationId(), alert.getTitle()));
+        }
     }
 
     @Transactional(readOnly = true)

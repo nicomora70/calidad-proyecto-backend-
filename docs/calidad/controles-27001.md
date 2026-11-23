@@ -27,7 +27,7 @@ Estado: ✅ implementado · 🟡 parcial · ⬜ pendiente · ➖ responsabilidad
 | **8.12** Prevención de fuga de datos | Secretos fuera del repositorio (`.env` en `.gitignore`); los errores no exponen trazas internas | `.gitignore`, `ApiExceptionHandler` | ✅ |
 | **8.13** Respaldo de la información | `pg_dump` diario con retención | Fase 5 | ⬜ |
 | **8.15** Registro (*logging*) | Auditoría de solo inserción (quién, qué, cuándo, IP, navegador) y logs JSON con `traceId` | `AuditService`, `RequestIdFilter` | ✅ |
-| **8.16** Actividades de seguimiento | Detección de reutilización de tokens y de bloqueos de cuenta (eventos auditados) | `REFRESH_TOKEN_REUSED`, `ACCOUNT_LOCKED` | 🟡 Falta alertar al IT_MANAGER (Fase 4) |
+| **8.16** Actividades de seguimiento | Detección de reutilización de tokens y de bloqueos de cuenta (eventos auditados) | `REFRESH_TOKEN_REUSED`, `ACCOUNT_LOCKED`; notificación `SECURITY_EVENT` a IT_MANAGER y ADMIN (`NotificationTriggers`) | ✅ |
 | **8.17** Sincronización de relojes | Todas las marcas de tiempo en UTC (`TIMESTAMPTZ`, `Clock` UTC) | `application.yml`, `WebConfig` | ✅ |
 | **8.20** Seguridad de las redes | El motor de cálculo y Postgres sin puertos públicos; red interna de Docker | `docker-compose.yml` | ✅ |
 | **8.24** Uso de criptografía | HMAC-SHA256 en los JWT, BCrypt, SHA-256 en los refresh tokens, HTTPS en el proxy | `SecurityConfig` | 🟡 TLS documentado, no incluido (Fase 5) |
@@ -42,6 +42,6 @@ Estado: ✅ implementado · 🟡 parcial · ⬜ pendiente · ➖ responsabilidad
 ## Brechas (se convierten en tareas de la Fase Q en `task.md`)
 1. Protección de la rama `main` (PR obligatorio y CI requerido).
 2. Procedimiento de supresión definitiva de datos personales (Ley 1581).
-3. Alertas de seguridad al IT_MANAGER (vinculadas a la Fase 4).
+3. ~~Alertas de seguridad al IT_MANAGER~~ (cerrado en la Fase 4).
 4. Respaldos, TLS y manual de operación (Fase 5).
 5. Escaneo de vulnerabilidades y revisión ASVS (Fase 6).

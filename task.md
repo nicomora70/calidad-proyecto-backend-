@@ -126,14 +126,14 @@
 - [x] Indicador de sentimiento del día, agregado por calc-engine (`POST /calculations/sentiment`) y expuesto en `GET /api/news/sentiment`
 - [x] La IA toma los titulares de la BD (prompt `alert-v2`) en vez de llamar a la API cada vez
 
-## Fase 4 — Notificaciones
+## Fase 4 — Notificaciones ✅
 
-- [ ] Migración V5 `notifications` y `notification_preferences`
-- [ ] Bandeja en la app: `GET /api/me/notifications`, `PATCH /api/me/notifications/{id}/read`, `POST /api/me/notifications/read-all`
-- [ ] Correo con Spring Mail y plantillas (Thymeleaf), configurado por SMTP del cliente en `.env`
-- [ ] Preferencias: `GET/PUT /api/me/notification-preferences` (canales y umbral de variación)
-- [ ] Disparadores: alerta IA lista, variación diaria mayor al umbral, licencia a 30 días de vencer
-- [ ] Envío con reintentos y estado (`PENDING`, `SENT`, `FAILED`); patrón outbox en BD
+- [x] Migración V5 `notifications` y `notification_preferences`
+- [x] Bandeja en la app: `GET /api/me/notifications` (`?unread=true`), `GET /api/me/notifications/unread-count`, `PATCH /api/me/notifications/{id}/read`, `POST /api/me/notifications/read-all`
+- [x] Correo con Spring Mail y plantilla Thymeleaf (`templates/mail/notification.html`), con el SMTP del cliente en `.env` (`MAIL_HOST`…); sin `MAIL_HOST` solo hay bandeja
+- [x] Preferencias: `GET/PUT /api/me/notification-preferences` (canales y umbral de variación entre 0,10 % y 100 %)
+- [x] Disparadores: alerta IA lista, variación diaria ≥ umbral (una vez por fecha de mercado) y eventos de seguridad a IT_MANAGER/ADMIN (`ACCOUNT_LOCKED`, `REFRESH_TOKEN_REUSED`). El tipo `LICENSE_EXPIRING` queda listo para la Fase 5
+- [x] Envío con reintentos (backoff exponencial, `max-attempts`) y estado (`PENDING`, `SENT`, `FAILED`); patrón outbox en BD
 - [ ] (Opcional) Notificaciones en tiempo real con SSE: `GET /api/me/notifications/stream`
 
 ## Fase 5 — Producto comercial (instalación por cliente)

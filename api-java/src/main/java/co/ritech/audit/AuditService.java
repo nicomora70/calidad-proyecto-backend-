@@ -1,8 +1,10 @@
 package co.ritech.audit;
 
 import java.time.Clock;
+import java.util.Set;
 import java.util.UUID;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -19,11 +21,16 @@ public class AuditService {
 
     private static final int MAX_USER_AGENT = 300;
 
+    /** Actions that alert IT_MANAGER and ADMIN (notifications). */
+    static final Set<String> SECURITY_ACTIONS = Set.of("ACCOUNT_LOCKED", "REFRESH_TOKEN_REUSED");
+
     private final AuditLogRepository repository;
+    private final ApplicationEventPublisher events;
     private final Clock clock;
 
-    public AuditService(AuditLogRepository repository, Clock clock) {
+    public AuditService(AuditLogRepository repository, ApplicationEventPublisher events, Clock clock) {
         this.repository = repository;
+        this.events = events;
         this.clock = clock;
     }
 
@@ -43,6 +50,9 @@ public class AuditService {
             }
         }
         repository.save(new AuditLog(actorId, action, entityType, entityId, details, ip, userAgent, clock.instant()));
+        if (SECURITY_ACTIONS.contains(action) && entityId != null) {
+            events.publishEvent(new SecurityEventRecorded(action, entityId));
+        }
     }
 
     @Transactional(readOnly = true)

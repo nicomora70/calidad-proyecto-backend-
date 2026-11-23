@@ -9,6 +9,7 @@ import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.context.ApplicationEventPublisher;
 
 import co.ritech.TestFixtures;
 
@@ -25,18 +26,21 @@ class MarketVariationServiceTest {
     private final MarketQuote quote = new MarketQuote("QQQ", LocalDate.of(2026, 11, 20), new BigDecimal("0.8"), "TEST");
     private MarketDataProvider provider;
     private MarketVariationRepository repository;
+    private ApplicationEventPublisher events;
     private MarketVariationService service;
 
     @BeforeEach
     void setUp() {
         provider = mock(MarketDataProvider.class);
         repository = mock(MarketVariationRepository.class);
+        events = mock(ApplicationEventPublisher.class);
         when(repository.save(any(MarketVariation.class))).thenAnswer(inv -> inv.getArgument(0));
         service = new MarketVariationService(
                 provider,
                 repository,
                 mock(MarketFetchLock.class),
                 TestFixtures.properties(),
+                events,
                 Clock.fixed(now, ZoneOffset.UTC));
     }
 

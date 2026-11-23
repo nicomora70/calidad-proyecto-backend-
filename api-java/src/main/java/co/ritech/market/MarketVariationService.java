@@ -5,6 +5,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,6 +24,7 @@ public class MarketVariationService {
     private final MarketVariationRepository repository;
     private final MarketFetchLock lock;
     private final RitechProperties properties;
+    private final ApplicationEventPublisher events;
     private final Clock clock;
 
     public MarketVariationService(
@@ -30,11 +32,13 @@ public class MarketVariationService {
             MarketVariationRepository repository,
             MarketFetchLock lock,
             RitechProperties properties,
+            ApplicationEventPublisher events,
             Clock clock) {
         this.provider = provider;
         this.repository = repository;
         this.lock = lock;
         this.properties = properties;
+        this.events = events;
         this.clock = clock;
     }
 
@@ -55,13 +59,16 @@ public class MarketVariationService {
 
         Instant now = clock.instant();
         MarketQuote quote = provider.fetchLatestQuote(symbol);
-        return repository
+        MarketVariation variation = repository
                 .findBySymbolAndMarketDate(symbol, quote.marketDate())
                 .map(existing -> {
                     existing.refresh(quote, now);
                     return existing;
                 })
                 .orElseGet(() -> repository.save(new MarketVariation(quote, now)));
+        events.publishEvent(
+                new MarketVariationFetched(variation.getSymbol(), variation.getMarketDate(), variation.getChangePct()));
+        return variation;
     }
 
     private Optional<MarketVariation> freshCached(String symbol) {

@@ -40,6 +40,8 @@ public final class TestFixtures {
                         new BigDecimal("0.30"),
                         new BigDecimal("2.50")),
                 new RitechProperties.News("fixed", "QQQ", "-", 4, false, 5, Duration.ofHours(48)),
+                new RitechProperties.Notifications(
+                        "RiTech <no-reply@test>", 3, Duration.ofMinutes(1), new BigDecimal("2.00")),
                 ZoneId.of("America/Bogota"));
     }
 }
