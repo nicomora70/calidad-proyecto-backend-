@@ -38,7 +38,7 @@ jobs:
       - run: chmod +x mvnw && ./mvnw -B verify
       - name: Coverage report
         if: always()
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         with:
           name: jacoco-report
           path: api-java/target/site/jacoco/
@@ -140,7 +140,7 @@ jobs:
           curl -fsS $API/v3/api-docs.yaml -o openapi.yaml
           grep -q '/api/v1/simulations' openapi.yaml
       - name: Upload OpenAPI contract
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         with:
           name: openapi
           path: openapi.yaml
@@ -151,7 +151,7 @@ jobs:
             grafana/k6:0.54.0 run --summary-export=/scripts/k6-summary.json /scripts/simulations.js
       - name: Upload k6 summary
         if: always()
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         with:
           name: k6-summary
           path: ops/k6/k6-summary.json
