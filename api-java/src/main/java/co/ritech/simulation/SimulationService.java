@@ -2,18 +2,23 @@ package co.ritech.simulation;
 
 import java.math.BigDecimal;
 import java.time.Clock;
+import java.util.List;
 import java.util.UUID;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import co.ritech.audit.AuditService;
+import co.ritech.common.DateRange;
 import co.ritech.config.RitechProperties;
 import co.ritech.engine.CalcEngineClient;
 import co.ritech.market.MarketVariation;
 import co.ritech.market.MarketVariationService;
+import co.ritech.security.CurrentUser;
 
 /**
  * Simulation use case:
@@ -64,8 +69,29 @@ public class SimulationService {
         return simulation;
     }
 
+    /** Owner or ADMIN; otherwise 404 so ids of other users' simulations are not disclosed. */
     @Transactional(readOnly = true)
-    public Page<Simulation> list(UUID userId, Pageable pageable) {
-        return userId == null ? repository.findAll(pageable) : repository.findByUserId(userId, pageable);
+    public Simulation get(UUID id, CurrentUser caller) {
+        return repository.findById(id)
+                .filter(s -> caller.isAdmin() || s.getUserId().equals(caller.id()))
+                .orElseThrow(() -> new SimulationNotFoundException(id));
+    }
+
+    @Transactional(readOnly = true)
+    public Page<Simulation> search(UUID userId, DateRange range, Pageable pageable) {
+        return repository.findAll(spec(userId, range), pageable);
+    }
+
+    /** Chronological samples for the statistics engine (drawdown depends on order). */
+    @Transactional(readOnly = true)
+    public List<Simulation> chronological(UUID userId, DateRange range) {
+        return repository.findAll(spec(userId, range), Sort.by("createdAt").ascending());
+    }
+
+    private static Specification<Simulation> spec(UUID userId, DateRange range) {
+        return Specification.allOf(
+                SimulationRepository.ownedBy(userId),
+                SimulationRepository.createdFrom(range.from()),
+                SimulationRepository.createdBefore(range.to()));
     }
 }

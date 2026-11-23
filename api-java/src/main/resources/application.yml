@@ -17,6 +17,8 @@ spring:
 
 server:
   port: 8080
+  # Trust X-Forwarded-* from the reverse proxy (client IP in the audit log)
+  forward-headers-strategy: framework
 
 management:
   endpoints:
@@ -35,7 +37,17 @@ springdoc:
     path: /v3/api-docs
 
 ritech:
-  version: 0.1.0
+  version: 0.2.0
+  timezone: America/Bogota
+  security:
+    jwt-secret: ${JWT_SECRET:}
+    access-token-ttl: ${ACCESS_TOKEN_TTL:15m}
+    refresh-token-ttl: ${REFRESH_TOKEN_TTL:7d}
+    max-failed-attempts: 5
+    lock-duration: 15m
+    bootstrap-admin-email: ${BOOTSTRAP_ADMIN_EMAIL:}
+    bootstrap-admin-password: ${BOOTSTRAP_ADMIN_PASSWORD:}
+    bootstrap-admin-name: ${BOOTSTRAP_ADMIN_NAME:Administrator}
   simulation:
     min-capital: 100000
     currency: COP

@@ -12,8 +12,8 @@ jobs:
       run:
         working-directory: calc-engine
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
       - run: pip install -r requirements-dev.txt
@@ -25,38 +25,61 @@ jobs:
       run:
         working-directory: api-java
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-java@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: "21"
           cache: maven
+      # Unit tests + Testcontainers integration tests (*IT) + JaCoCo report
       - run: chmod +x mvnw && ./mvnw -B verify
+      - name: Coverage report
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: jacoco-report
+          path: api-java/target/site/jacoco/
 
   smoke-test:
     needs: [calc-engine, api-java]
     runs-on: ubuntu-latest
+    env:
+      JWT_SECRET: ci-only-secret-ci-only-secret-ci-only-secret
+      BOOTSTRAP_ADMIN_EMAIL: admin@ci.test.co
+      BOOTSTRAP_ADMIN_PASSWORD: bootstrap-ci-1
+      API: http://localhost:8080
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Start stack
         run: docker compose up -d --build --wait --wait-timeout 300
       - name: Health
-        run: curl -fsS http://localhost:8080/api/health
-      - name: Simulation (1.000.000 COP, fixed variation 1% -> return 2%)
+        run: curl -fsS $API/api/health
+      - name: Anonymous access is rejected
+        run: test "$(curl -s -o /dev/null -w '%{http_code}' $API/api/me)" = "401"
+      - name: End-to-end flow (admin -> investor -> simulation -> dashboard)
         run: |
-          body=$(curl -fsS -X POST http://localhost:8080/api/simulations \
-            -H 'Content-Type: application/json' -d '{"initialCapital": 1000000}')
-          echo "$body"
-          echo "$body" | grep -q '"finalAmount":1020000.00'
-      - name: Capital below minimum is rejected with 400
-        run: |
-          code=$(curl -s -o /dev/null -w '%{http_code}' -X POST http://localhost:8080/api/simulations \
-            -H 'Content-Type: application/json' -d '{"initialCapital": 50000}')
+          set -euo pipefail
+          post() { curl -fsS -X POST "$API$1" -H 'Content-Type: application/json' ${3:+-H "Authorization: Bearer $3"} -d "$2"; }
+
+          tmp=$(post /api/auth/login "{\"email\":\"$BOOTSTRAP_ADMIN_EMAIL\",\"password\":\"$BOOTSTRAP_ADMIN_PASSWORD\"}" | jq -r .accessToken)
+          admin=$(post /api/auth/change-password "{\"currentPassword\":\"$BOOTSTRAP_ADMIN_PASSWORD\",\"newPassword\":\"admin-ci-final-1\"}" "$tmp" | jq -r .accessToken)
+
+          post /api/users '{"fullName":"CI Investor","email":"investor@ci.test.co","role":"INVESTOR","temporaryPassword":"temporal-123"}' "$admin" | jq .
+          tmp=$(post /api/auth/login '{"email":"investor@ci.test.co","password":"temporal-123"}' | jq -r .accessToken)
+          inv=$(post /api/auth/change-password '{"currentPassword":"temporal-123","newPassword":"investor-ci-1"}' "$tmp" | jq -r .accessToken)
+
+          # fixed variation 1% -> return 2% -> 1.020.000
+          sim=$(post /api/simulations '{"initialCapital": 1000000}' "$inv")
+          echo "$sim" | jq .
+          test "$(echo "$sim" | jq -r .finalAmount)" = "1020000"  || test "$(echo "$sim" | jq -r .finalAmount)" = "1020000.00"
+
+          code=$(curl -s -o /dev/null -w '%{http_code}' -X POST $API/api/simulations \
+            -H 'Content-Type: application/json' -H "Authorization: Bearer $inv" -d '{"initialCapital": 50000}')
           test "$code" = "400"
-      - name: History and dashboard
-        run: |
-          curl -fsS "http://localhost:8080/api/simulations?page=0&size=5"
-          curl -fsS http://localhost:8080/api/dashboard/statistics
+
+          curl -fsS "$API/api/me/simulations" -H "Authorization: Bearer $inv" | jq -e '.page.totalElements == 1'
+          curl -fsS "$API/api/dashboard/statistics" -H "Authorization: Bearer $admin" | jq -e '.count == 1'
+          test "$(curl -s -o /dev/null -w '%{http_code}' $API/api/dashboard/statistics -H "Authorization: Bearer $inv")" = "403"
       - name: Logs on failure
         if: failure()
         run: docker compose logs

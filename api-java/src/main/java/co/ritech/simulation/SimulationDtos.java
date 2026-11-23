@@ -14,9 +14,8 @@ public final class SimulationDtos {
     private SimulationDtos() {
     }
 
-    /** userId is temporary: in Phase 1 it is taken from the JWT, not from the body. */
+    /** The owner is always the authenticated user (taken from the access token). */
     public record CreateSimulationRequest(
-            UUID userId,
             @NotNull @Positive @Digits(integer = 16, fraction = 2) BigDecimal initialCapital) {
     }
 
@@ -34,7 +33,7 @@ public final class SimulationDtos {
             BigDecimal profit,
             Instant createdAt) {
 
-        static SimulationResponse from(Simulation s) {
+        public static SimulationResponse from(Simulation s) {
             return new SimulationResponse(s.getId(), s.getUserId(), s.getInitialCapital(),
                     s.getCurrency(), s.getSymbol(), s.getMarketDate(), s.getMarketVariationPct(),
                     s.getLeverage(), s.getReturnPct(), s.getFinalAmount(), s.getProfit(),
