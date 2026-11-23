@@ -34,7 +34,7 @@ import jakarta.validation.constraints.NotNull;
 
 /** In-app inbox and notification preferences of the authenticated user. */
 @RestController
-@RequestMapping("/api/me")
+@RequestMapping("/api/v1/me")
 @Tag(name = "Notifications")
 @SecurityRequirement(name = "bearer")
 public class NotificationController {

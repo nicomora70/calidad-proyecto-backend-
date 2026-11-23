@@ -24,7 +24,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 
 /** Endpoints about the authenticated user. */
 @RestController
-@RequestMapping("/api/me")
+@RequestMapping("/api/v1/me")
 @Tag(name = "Me")
 @SecurityRequirement(name = "bearer")
 public class MeController {

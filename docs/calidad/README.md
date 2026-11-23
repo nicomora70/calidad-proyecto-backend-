@@ -14,6 +14,7 @@ pago, así que aquí se citan las cláusulas y características por nombre, sin 
 | **ISO/IEC/IEEE 29119-2/-3/-4** | Proceso, documentación y técnicas de prueba | [plan-pruebas-29119.md](plan-pruebas-29119.md) |
 | **ISO/IEC/IEEE 29148:2018** | Ingeniería de requisitos y trazabilidad | [matriz-trazabilidad-29148.md](matriz-trazabilidad-29148.md) |
 | **ISO/IEC 27001:2022** (Anexo A) · **ISO/IEC 27002:2022** | Seguridad de la información | [controles-27001.md](controles-27001.md) |
+| OWASP ASVS 4.0.3 (nivel 2) | Verificación de seguridad de la aplicación | [revision-asvs-l2.md](revision-asvs-l2.md) |
 | **ISO/IEC 29110** (perfil básico) | Ciclo de vida para equipos pequeños: gestión del proyecto e implementación | [proceso-29110.md](proceso-29110.md) |
 | **ISO 31000:2018** | Gestión de riesgos | [riesgos-31000.md](riesgos-31000.md) |
 | ISO 9001:2015 · ISO/IEC/IEEE 90003:2018 | Sistema de gestión de calidad aplicado al software | Marco de referencia (ciclo PDCA, sección siguiente) |
@@ -38,5 +39,5 @@ Todas son verificables en el repositorio o en GitHub Actions:
 - Historial de cambios: commits y pull requests en GitHub.
 - Ejecuciones de CI con resultados de pruebas y el reporte JaCoCo (artefacto `jacoco-report`).
 - Migraciones versionadas: `api-java/src/main/resources/db/migration`.
-- Auditoría en tiempo de ejecución: tabla `audit_log` y `GET /api/audit`.
+- Auditoría en tiempo de ejecución: tabla `audit_log` y `GET /api/v1/audit`.
 - Documentación de requisitos, arquitectura y datos: `docs/`.

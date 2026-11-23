@@ -40,9 +40,11 @@ import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.options;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -61,7 +63,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
             "ritech.security.bootstrap-admin-email=admin@ritech.co",
             "ritech.security.bootstrap-admin-password=" + InstallationFlowIT.BOOTSTRAP_PASSWORD,
             "ritech.market.provider=fixed",
-            "ritech.market.fixed-variation-pct=1.5"
+            "ritech.market.fixed-variation-pct=1.5",
+            // every test logs in from 127.0.0.1; the limiter itself is covered by RateLimitFilterTest
+            "ritech.rate-limit.auth-per-minute=1000"
         })
 class InstallationFlowIT {
 
@@ -132,12 +136,12 @@ class InstallationFlowIT {
         String adminToken = adminToken();
 
         // Admin creates an investor with a temporary password
-        String investorId = read(postJson("/api/users", adminToken, """
+        String investorId = read(postJson("/api/v1/users", adminToken, """
                 {"fullName":"Ana Inversora","email":"ana@cliente.co","role":"INVESTOR",
                  "temporaryPassword":"temporal-123"}""").andExpect(status().isCreated()), "$.id");
 
         // Duplicate email (case-insensitive) is rejected
-        postJson("/api/users", adminToken, """
+        postJson("/api/v1/users", adminToken, """
                 {"fullName":"Otra","email":"ANA@cliente.co","role":"INVESTOR","temporaryPassword":"temporal-123"}""")
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.code").value("EMAIL_ALREADY_EXISTS"));
@@ -147,12 +151,12 @@ class InstallationFlowIT {
                 login("ana@cliente.co", "temporal-123")
                         .andExpect(jsonPath("$.user.mustChangePassword").value(true)),
                 "$.accessToken");
-        postJson("/api/simulations", tempToken, "{\"initialCapital\": 1000000}")
+        postJson("/api/v1/simulations", tempToken, "{\"initialCapital\": 1000000}")
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.code").value("PASSWORD_CHANGE_REQUIRED"));
         String investorToken = read(
                 postJson(
-                                "/api/auth/change-password",
+                                "/api/v1/auth/change-password",
                                 tempToken,
                                 "{\"currentPassword\":\"temporal-123\",\"newPassword\":\"ana-segura-2026\"}")
                         .andExpect(status().isOk()),
@@ -160,41 +164,41 @@ class InstallationFlowIT {
 
         // Simulation: fixed variation 1.5% -> return 3% -> 1.030.000
         String simulationId = read(
-                postJson("/api/simulations", investorToken, "{\"initialCapital\": 1000000}")
+                postJson("/api/v1/simulations", investorToken, "{\"initialCapital\": 1000000}")
                         .andExpect(status().isCreated())
                         .andExpect(jsonPath("$.userId").value(investorId))
                         .andExpect(jsonPath("$.finalAmount").value(1030000.00)),
                 "$.id");
 
-        postJson("/api/simulations", investorToken, "{\"initialCapital\": 50000}")
+        postJson("/api/v1/simulations", investorToken, "{\"initialCapital\": 50000}")
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("INSUFFICIENT_CAPITAL"));
 
         // AI alert (template provider) is generated asynchronously after the commit
         assertThat(awaitAlertStatus(simulationId, investorToken)).isEqualTo(200);
-        mvc.perform(get("/api/simulations/" + simulationId + "/alert")
+        mvc.perform(get("/api/v1/simulations/" + simulationId + "/alert")
                         .header("Authorization", "Bearer " + investorToken))
                 .andExpect(jsonPath("$.status").value("DONE"))
                 .andExpect(jsonPath("$.title").value("El NASDAQ 100 subió 1,50 % y tu simulación ganó 3,00 %"));
-        mvc.perform(get("/api/me/alerts").header("Authorization", "Bearer " + investorToken))
+        mvc.perform(get("/api/v1/me/alerts").header("Authorization", "Bearer " + investorToken))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.page.totalElements").value(1));
 
         // The ready alert lands in the in-app inbox (no SMTP configured: in-app only)
         assertThat(awaitUnread(investorToken)).isEqualTo(1);
         String notificationId = read(
-                mvc.perform(get("/api/me/notifications").header("Authorization", "Bearer " + investorToken))
+                mvc.perform(get("/api/v1/me/notifications").header("Authorization", "Bearer " + investorToken))
                         .andExpect(jsonPath("$.content[0].type").value("AI_ALERT_READY")),
                 "$.content[0].id");
-        mvc.perform(patch("/api/me/notifications/" + notificationId + "/read")
+        mvc.perform(patch("/api/v1/me/notifications/" + notificationId + "/read")
                         .header("Authorization", "Bearer " + investorToken))
                 .andExpect(status().isNoContent());
-        mvc.perform(get("/api/me/notifications/unread-count").header("Authorization", "Bearer " + investorToken))
+        mvc.perform(get("/api/v1/me/notifications/unread-count").header("Authorization", "Bearer " + investorToken))
                 .andExpect(jsonPath("$.count").value(0));
-        mvc.perform(get("/api/me/notification-preferences").header("Authorization", "Bearer " + investorToken))
+        mvc.perform(get("/api/v1/me/notification-preferences").header("Authorization", "Bearer " + investorToken))
                 .andExpect(jsonPath("$.variationThresholdPct").value(2.00))
                 .andExpect(jsonPath("$.emailAvailable").value(false));
-        mvc.perform(put("/api/me/notification-preferences")
+        mvc.perform(put("/api/v1/me/notification-preferences")
                         .header("Authorization", "Bearer " + investorToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"emailEnabled\":false,\"inAppEnabled\":true,\"variationThresholdPct\":1.25}"))
@@ -202,36 +206,38 @@ class InstallationFlowIT {
                 .andExpect(jsonPath("$.variationThresholdPct").value(1.25));
 
         // History: own list, own detail; investor cannot see the global list or the dashboard
-        mvc.perform(get("/api/me/simulations").header("Authorization", "Bearer " + investorToken))
+        mvc.perform(get("/api/v1/me/simulations").header("Authorization", "Bearer " + investorToken))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.page.totalElements").value(1));
-        mvc.perform(get("/api/simulations/" + simulationId).header("Authorization", "Bearer " + investorToken))
+        mvc.perform(get("/api/v1/simulations/" + simulationId).header("Authorization", "Bearer " + investorToken))
                 .andExpect(status().isOk());
-        mvc.perform(get("/api/simulations").header("Authorization", "Bearer " + investorToken))
+        mvc.perform(get("/api/v1/simulations").header("Authorization", "Bearer " + investorToken))
                 .andExpect(status().isForbidden());
-        mvc.perform(get("/api/dashboard/statistics").header("Authorization", "Bearer " + investorToken))
+        mvc.perform(get("/api/v1/dashboard/statistics").header("Authorization", "Bearer " + investorToken))
                 .andExpect(status().isForbidden());
 
         // Admin sees everything
-        mvc.perform(get("/api/simulations").param("userId", investorId).header("Authorization", "Bearer " + adminToken))
+        mvc.perform(get("/api/v1/simulations")
+                        .param("userId", investorId)
+                        .header("Authorization", "Bearer " + adminToken))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.page.totalElements").value(1));
-        mvc.perform(get("/api/dashboard/statistics").header("Authorization", "Bearer " + adminToken))
+        mvc.perform(get("/api/v1/dashboard/statistics").header("Authorization", "Bearer " + adminToken))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.count").value(1));
 
         // Audit log recorded the important actions
-        mvc.perform(get("/api/audit")
+        mvc.perform(get("/api/v1/audit")
                         .param("action", "SIMULATION_CREATED")
                         .header("Authorization", "Bearer " + adminToken))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content[0].actorId").value(investorId));
 
         // Soft delete keeps the simulation; the investor can no longer log in
-        mvc.perform(delete("/api/users/" + investorId).header("Authorization", "Bearer " + adminToken))
+        mvc.perform(delete("/api/v1/users/" + investorId).header("Authorization", "Bearer " + adminToken))
                 .andExpect(status().isNoContent());
         login("ana@cliente.co", "ana-segura-2026").andExpect(status().isUnauthorized());
-        mvc.perform(get("/api/simulations/" + simulationId).header("Authorization", "Bearer " + adminToken))
+        mvc.perform(get("/api/v1/simulations/" + simulationId).header("Authorization", "Bearer " + adminToken))
                 .andExpect(status().isOk());
     }
 
@@ -240,7 +246,7 @@ class InstallationFlowIT {
         int count = 0;
         for (int i = 0; i < 50 && count == 0; i++) {
             count = JsonPath.read(
-                    mvc.perform(get("/api/me/notifications/unread-count").header("Authorization", "Bearer " + token))
+                    mvc.perform(get("/api/v1/me/notifications/unread-count").header("Authorization", "Bearer " + token))
                             .andReturn()
                             .getResponse()
                             .getContentAsString(),
@@ -256,7 +262,7 @@ class InstallationFlowIT {
     private int awaitAlertStatus(String simulationId, String token) throws Exception {
         int status = 0;
         for (int i = 0; i < 50; i++) {
-            status = mvc.perform(get("/api/simulations/" + simulationId + "/alert")
+            status = mvc.perform(get("/api/v1/simulations/" + simulationId + "/alert")
                             .header("Authorization", "Bearer " + token))
                     .andReturn()
                     .getResponse()
@@ -283,17 +289,17 @@ class InstallationFlowIT {
                         day.atTime(21, 0).toInstant(ZoneOffset.UTC)));
             }
         }
-        postJson("/api/projections", adminToken, "{\"initialCapital\": 1000000, \"horizonDays\": 20}")
+        postJson("/api/v1/projections", adminToken, "{\"initialCapital\": 1000000, \"horizonDays\": 20}")
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.projection.result.base.finalAmount").value(1010000.00))
                 .andExpect(jsonPath("$.projection.result.probabilityOfLossPct").value(40.0))
                 .andExpect(jsonPath("$.projection.currency").value("COP"))
                 .andExpect(jsonPath("$.disclaimer").exists());
-        postJson("/api/projections", adminToken, "{\"initialCapital\": 1000000, \"horizonDays\": 253}")
+        postJson("/api/v1/projections", adminToken, "{\"initialCapital\": 1000000, \"horizonDays\": 253}")
                 .andExpect(status().isBadRequest());
 
         // Audit export (CSV) includes the projection
-        String csv = mvc.perform(get("/api/audit/export").header("Authorization", "Bearer " + adminToken))
+        String csv = mvc.perform(get("/api/v1/audit/export").header("Authorization", "Bearer " + adminToken))
                 .andExpect(status().isOk())
                 .andReturn()
                 .getResponse()
@@ -301,18 +307,18 @@ class InstallationFlowIT {
         assertThat(csv).startsWith("\uFEFFid,created_at").contains("PROJECTION_CREATED");
 
         // Branding: ADMIN updates it, anyone (even without a token) reads it
-        mvc.perform(put("/api/settings/branding")
+        mvc.perform(put("/api/v1/settings/branding")
                         .header("Authorization", "Bearer " + adminToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"productName\":\"Mi Marca\",\"primaryColor\":\"#112233\"}"))
                 .andExpect(status().isOk());
-        mvc.perform(get("/api/settings/branding"))
+        mvc.perform(get("/api/v1/settings/branding"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.productName").value("Mi Marca"))
                 .andExpect(jsonPath("$.primaryColor").value("#112233"));
 
         // License checks are off in this installation (LICENSE_MODE=disabled)
-        mvc.perform(get("/api/license").header("Authorization", "Bearer " + adminToken))
+        mvc.perform(get("/api/v1/license").header("Authorization", "Bearer " + adminToken))
                 .andExpect(jsonPath("$.state").value("DISABLED"));
     }
 
@@ -321,20 +327,20 @@ class InstallationFlowIT {
         String adminToken = adminToken();
 
         // The fixed provider ran on startup: 3 sample articles, newest first
-        mvc.perform(get("/api/news").header("Authorization", "Bearer " + adminToken))
+        mvc.perform(get("/api/v1/news").header("Authorization", "Bearer " + adminToken))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.page.totalElements").value(3))
                 .andExpect(jsonPath("$.content[0].title").value("Tech stocks lift the Nasdaq 100 on strong earnings"));
-        mvc.perform(get("/api/news").param("sentiment", "neutral").header("Authorization", "Bearer " + adminToken))
+        mvc.perform(get("/api/v1/news").param("sentiment", "neutral").header("Authorization", "Bearer " + adminToken))
                 .andExpect(jsonPath("$.page.totalElements").value(1));
 
         // A manual refresh finds the same URLs and inserts nothing
-        mvc.perform(post("/api/news/refresh").header("Authorization", "Bearer " + adminToken))
+        mvc.perform(post("/api/v1/news/refresh").header("Authorization", "Bearer " + adminToken))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.fetched").value(3))
                 .andExpect(jsonPath("$.inserted").value(0));
 
-        mvc.perform(get("/api/news/sentiment").header("Authorization", "Bearer " + adminToken))
+        mvc.perform(get("/api/v1/news/sentiment").header("Authorization", "Bearer " + adminToken))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.sentiment.label").exists())
                 .andExpect(jsonPath("$.sentiment.meanScore").exists())
@@ -346,16 +352,16 @@ class InstallationFlowIT {
         adminToken();
         String refresh1 = read(login("admin@ritech.co", ADMIN_PASSWORD), "$.refreshToken");
         String refresh2 = read(
-                postJson("/api/auth/refresh", null, "{\"refreshToken\":\"" + refresh1 + "\"}")
+                postJson("/api/v1/auth/refresh", null, "{\"refreshToken\":\"" + refresh1 + "\"}")
                         .andExpect(status().isOk()),
                 "$.refreshToken");
         assertThat(refresh2).isNotEqualTo(refresh1);
 
         // Reusing the rotated token revokes the whole family, including refresh2
-        postJson("/api/auth/refresh", null, "{\"refreshToken\":\"" + refresh1 + "\"}")
+        postJson("/api/v1/auth/refresh", null, "{\"refreshToken\":\"" + refresh1 + "\"}")
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.code").value("INVALID_REFRESH_TOKEN"));
-        postJson("/api/auth/refresh", null, "{\"refreshToken\":\"" + refresh2 + "\"}")
+        postJson("/api/v1/auth/refresh", null, "{\"refreshToken\":\"" + refresh2 + "\"}")
                 .andExpect(status().isUnauthorized());
     }
 
@@ -363,7 +369,7 @@ class InstallationFlowIT {
     void accountLocksAfterFiveFailedAttempts() throws Exception {
         String adminToken = adminToken();
         String email = "lock-" + UUID.randomUUID() + "@cliente.co";
-        postJson("/api/users", adminToken, """
+        postJson("/api/v1/users", adminToken, """
                 {"fullName":"Lock Test","email":"%s","role":"INVESTOR","temporaryPassword":"temporal-123"}""".formatted(email)).andExpect(status().isCreated());
 
         for (int i = 0; i < 5; i++) {
@@ -377,8 +383,8 @@ class InstallationFlowIT {
     @Test
     void lastAdminCannotBeDemoted() throws Exception {
         String adminToken = adminToken();
-        String adminId = read(mvc.perform(get("/api/me").header("Authorization", "Bearer " + adminToken)), "$.id");
-        mvc.perform(patch("/api/users/" + adminId + "/role")
+        String adminId = read(mvc.perform(get("/api/v1/me").header("Authorization", "Bearer " + adminToken)), "$.id");
+        mvc.perform(patch("/api/v1/users/" + adminId + "/role")
                         .header("Authorization", "Bearer " + adminToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"role\":\"INVESTOR\"}"))
@@ -388,11 +394,28 @@ class InstallationFlowIT {
 
     @Test
     void publicAndProtectedEndpoints() throws Exception {
-        mvc.perform(get("/api/health")).andExpect(status().isOk());
-        mvc.perform(get("/api/me")).andExpect(status().isUnauthorized());
-        mvc.perform(get("/api/me").header("Authorization", "Bearer not-a-jwt")).andExpect(status().isUnauthorized());
+        mvc.perform(get("/api/v1/health"))
+                .andExpect(status().isOk())
+                .andExpect(header().string("X-Content-Type-Options", "nosniff"))
+                .andExpect(header().string("X-Frame-Options", "DENY"))
+                .andExpect(header().string("Referrer-Policy", "no-referrer"))
+                .andExpect(header().exists("Content-Security-Policy"))
+                .andExpect(header().exists("X-RateLimit-Remaining"));
+        mvc.perform(get("/readyz")).andExpect(status().isOk());
+        // CORS: only the configured frontend origin
+        mvc.perform(options("/api/v1/health")
+                        .header("Origin", "http://localhost:3000")
+                        .header("Access-Control-Request-Method", "GET"))
+                .andExpect(header().string("Access-Control-Allow-Origin", "http://localhost:3000"));
+        mvc.perform(options("/api/v1/health")
+                        .header("Origin", "https://evil.example")
+                        .header("Access-Control-Request-Method", "GET"))
+                .andExpect(status().isForbidden());
+        mvc.perform(get("/api/v1/me")).andExpect(status().isUnauthorized());
+        mvc.perform(get("/api/v1/me").header("Authorization", "Bearer not-a-jwt"))
+                .andExpect(status().isUnauthorized());
         // A stale/invalid bearer token must not break the public refresh endpoint
-        postJson("/api/auth/refresh", "not-a-jwt", "{\"refreshToken\":\"unknown\"}")
+        postJson("/api/v1/auth/refresh", "not-a-jwt", "{\"refreshToken\":\"unknown\"}")
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.code").value("INVALID_REFRESH_TOKEN"));
     }
@@ -406,7 +429,7 @@ class InstallationFlowIT {
         String temp = read(login("admin@ritech.co", BOOTSTRAP_PASSWORD).andExpect(status().isOk()), "$.accessToken");
         return read(
                 postJson(
-                                "/api/auth/change-password",
+                                "/api/v1/auth/change-password",
                                 temp,
                                 "{\"currentPassword\":\"" + BOOTSTRAP_PASSWORD + "\",\"newPassword\":\""
                                         + ADMIN_PASSWORD + "\"}")
@@ -415,7 +438,7 @@ class InstallationFlowIT {
     }
 
     private ResultActions login(String email, String password) throws Exception {
-        return postJson("/api/auth/login", null, "{\"email\":\"" + email + "\",\"password\":\"" + password + "\"}");
+        return postJson("/api/v1/auth/login", null, "{\"email\":\"" + email + "\",\"password\":\"" + password + "\"}");
     }
 
     private ResultActions postJson(String url, String token, String body) throws Exception {

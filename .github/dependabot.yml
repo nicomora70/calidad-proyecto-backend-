@@ -1,0 +1,27 @@
+version: 2
+updates:
+  - package-ecosystem: maven
+    directory: /api-java
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      spring:
+        patterns: ["org.springframework*"]
+  - package-ecosystem: pip
+    directory: /calc-engine
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+  - package-ecosystem: docker
+    directory: /api-java
+    schedule:
+      interval: weekly
+  - package-ecosystem: docker
+    directory: /calc-engine
+    schedule:
+      interval: weekly
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly

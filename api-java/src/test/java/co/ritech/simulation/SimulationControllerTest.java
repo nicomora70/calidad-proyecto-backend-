@@ -70,7 +70,7 @@ class SimulationControllerTest {
     void investorCreatesSimulationOwnedByTokenSubject() throws Exception {
         when(service.simulate(eq(USER_ID), any())).thenReturn(sample());
 
-        mvc.perform(post("/api/simulations")
+        mvc.perform(post("/api/v1/simulations")
                         .with(as(Role.INVESTOR, false))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"initialCapital\": 1000000}"))
@@ -81,7 +81,7 @@ class SimulationControllerTest {
 
     @Test
     void anonymousIsUnauthorized() throws Exception {
-        mvc.perform(post("/api/simulations")
+        mvc.perform(post("/api/v1/simulations")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"initialCapital\": 1000000}"))
                 .andExpect(status().isUnauthorized())
@@ -90,7 +90,7 @@ class SimulationControllerTest {
 
     @Test
     void traceIdFromCallerIsEchoedInHeaderAndErrorBody() throws Exception {
-        mvc.perform(post("/api/simulations")
+        mvc.perform(post("/api/v1/simulations")
                         .header("X-Request-Id", "frontend-trace-42")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"initialCapital\": 1000000}"))
@@ -101,7 +101,7 @@ class SimulationControllerTest {
 
     @Test
     void itManagerCannotSimulate() throws Exception {
-        mvc.perform(post("/api/simulations")
+        mvc.perform(post("/api/v1/simulations")
                         .with(as(Role.IT_MANAGER, false))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"initialCapital\": 1000000}"))
@@ -111,12 +111,12 @@ class SimulationControllerTest {
 
     @Test
     void investorCannotListEverybodysSimulations() throws Exception {
-        mvc.perform(get("/api/simulations").with(as(Role.INVESTOR, false))).andExpect(status().isForbidden());
+        mvc.perform(get("/api/v1/simulations").with(as(Role.INVESTOR, false))).andExpect(status().isForbidden());
     }
 
     @Test
     void temporaryPasswordBlocksBusinessEndpoints() throws Exception {
-        mvc.perform(post("/api/simulations")
+        mvc.perform(post("/api/v1/simulations")
                         .with(as(Role.INVESTOR, true))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"initialCapital\": 1000000}"))
@@ -126,7 +126,7 @@ class SimulationControllerTest {
 
     @Test
     void missingCapitalIsValidationError() throws Exception {
-        mvc.perform(post("/api/simulations")
+        mvc.perform(post("/api/v1/simulations")
                         .with(as(Role.INVESTOR, false))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{}"))
@@ -139,7 +139,7 @@ class SimulationControllerTest {
         when(service.simulate(any(), any()))
                 .thenThrow(new InsufficientCapitalException(new BigDecimal("50000"), new BigDecimal("100000"), "COP"));
 
-        mvc.perform(post("/api/simulations")
+        mvc.perform(post("/api/v1/simulations")
                         .with(as(Role.INVESTOR, false))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"initialCapital\": 50000}"))
@@ -149,7 +149,7 @@ class SimulationControllerTest {
 
     @Test
     void malformedIdIsBadRequestWithCode() throws Exception {
-        mvc.perform(get("/api/simulations/not-a-uuid").with(as(Role.INVESTOR, false)))
+        mvc.perform(get("/api/v1/simulations/not-a-uuid").with(as(Role.INVESTOR, false)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("BAD_REQUEST"));
     }

@@ -44,31 +44,31 @@ public class LicenseInterceptor implements HandlerInterceptor {
 
     /** Logging in/out and renewing must keep working while the license is expired. */
     private static boolean alwaysWritable(String path) {
-        return PATHS.match("/api/auth/**", path) || "/api/license".equals(path);
+        return PATHS.match("/api/v1/auth/**", path) || "/api/v1/license".equals(path);
     }
 
     static Module moduleFor(String method, String path) {
-        if (PATHS.match("/api/**/export", path)) {
+        if (PATHS.match("/api/v1/**/export", path)) {
             return Module.EXPORTS;
         }
-        if ("POST".equals(method) && "/api/simulations".equals(path)) {
+        if ("POST".equals(method) && "/api/v1/simulations".equals(path)) {
             return Module.SIMULATIONS;
         }
-        if (PATHS.match("/api/dashboard/**", path)) {
+        if (PATHS.match("/api/v1/dashboard/**", path)) {
             return Module.DASHBOARD;
         }
-        if (PATHS.match("/api/simulations/*/alert", path) || "/api/me/alerts".equals(path)) {
+        if (PATHS.match("/api/v1/simulations/*/alert", path) || "/api/v1/me/alerts".equals(path)) {
             return Module.AI_ALERTS;
         }
-        if (PATHS.match("/api/news/**", path) || "/api/news".equals(path)) {
+        if (PATHS.match("/api/v1/news/**", path) || "/api/v1/news".equals(path)) {
             return Module.NEWS;
         }
-        if (PATHS.match("/api/me/notifications/**", path)
-                || "/api/me/notifications".equals(path)
-                || "/api/me/notification-preferences".equals(path)) {
+        if (PATHS.match("/api/v1/me/notifications/**", path)
+                || "/api/v1/me/notifications".equals(path)
+                || "/api/v1/me/notification-preferences".equals(path)) {
             return Module.NOTIFICATIONS;
         }
-        if (PATHS.match("/api/projections/**", path) || "/api/projections".equals(path)) {
+        if (PATHS.match("/api/v1/projections/**", path) || "/api/v1/projections".equals(path)) {
             return Module.PROJECTIONS;
         }
         return null;

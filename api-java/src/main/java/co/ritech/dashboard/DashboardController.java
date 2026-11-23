@@ -20,7 +20,7 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 @RestController
-@RequestMapping("/api/dashboard")
+@RequestMapping("/api/v1/dashboard")
 @Tag(name = "Dashboard (ADMIN)")
 @SecurityRequirement(name = "bearer")
 public class DashboardController {

@@ -7,10 +7,29 @@ on:
     tags: ["v*.*.*"]
 
 permissions:
-  contents: read
+  contents: write # GitHub Release with openapi.yaml
   packages: write
 
 jobs:
+  # Versioned API contract for the frontend repository: openapi.yaml attached to the release
+  openapi:
+    runs-on: ubuntu-latest
+    env:
+      JWT_SECRET: release-only-secret-release-only-secret-0
+    steps:
+      - uses: actions/checkout@v5
+      - run: docker compose up -d --build --wait --wait-timeout 300
+      - run: curl -fsS http://localhost:8080/v3/api-docs.yaml -o openapi.yaml
+      - name: Attach to the GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          gh release view "$TAG" >/dev/null 2>&1 || gh release create "$TAG" --generate-notes
+          gh release upload "$TAG" openapi.yaml --clobber
+      - if: always()
+        run: docker compose down -v
+
   images:
     runs-on: ubuntu-latest
     strategy:

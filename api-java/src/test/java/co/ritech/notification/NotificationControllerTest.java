@@ -63,7 +63,7 @@ class NotificationControllerTest {
         when(service.updatePreferences(USER_ID, false, true, new BigDecimal("1.50")))
                 .thenReturn(new NotificationPreference(USER_ID, false, true, new BigDecimal("1.50"), Instant.now()));
 
-        mvc.perform(put("/api/me/notification-preferences")
+        mvc.perform(put("/api/v1/me/notification-preferences")
                         .with(investor())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(prefs("1.50")))
@@ -75,7 +75,7 @@ class NotificationControllerTest {
     @Test
     void thresholdBoundsAreValidated() throws Exception {
         for (String invalid : new String[] {"0.09", "100.01", "1.234"}) {
-            mvc.perform(put("/api/me/notification-preferences")
+            mvc.perform(put("/api/v1/me/notification-preferences")
                             .with(investor())
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(prefs(invalid)))
@@ -85,7 +85,7 @@ class NotificationControllerTest {
         for (String valid : new String[] {"0.10", "100.00"}) {
             when(service.updatePreferences(eq(USER_ID), eq(false), eq(true), any()))
                     .thenReturn(new NotificationPreference(USER_ID, false, true, new BigDecimal(valid), Instant.now()));
-            mvc.perform(put("/api/me/notification-preferences")
+            mvc.perform(put("/api/v1/me/notification-preferences")
                             .with(investor())
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(prefs(valid)))
@@ -98,14 +98,14 @@ class NotificationControllerTest {
         UUID id = UUID.randomUUID();
         doThrow(new NotificationNotFoundException(id)).when(service).markRead(USER_ID, id);
 
-        mvc.perform(patch("/api/me/notifications/" + id + "/read").with(investor()))
+        mvc.perform(patch("/api/v1/me/notifications/" + id + "/read").with(investor()))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.code").value("NOTIFICATION_NOT_FOUND"));
     }
 
     @Test
     void markReadReturns204() throws Exception {
-        mvc.perform(patch("/api/me/notifications/" + UUID.randomUUID() + "/read")
+        mvc.perform(patch("/api/v1/me/notifications/" + UUID.randomUUID() + "/read")
                         .with(investor()))
                 .andExpect(status().isNoContent());
     }
@@ -114,14 +114,14 @@ class NotificationControllerTest {
     void unreadCount() throws Exception {
         when(service.unreadCount(USER_ID)).thenReturn(4L);
 
-        mvc.perform(get("/api/me/notifications/unread-count").with(investor()))
+        mvc.perform(get("/api/v1/me/notifications/unread-count").with(investor()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.count").value(4));
     }
 
     @Test
     void anonymousIsUnauthorized() throws Exception {
-        mvc.perform(get("/api/me/notifications")).andExpect(status().isUnauthorized());
+        mvc.perform(get("/api/v1/me/notifications")).andExpect(status().isUnauthorized());
         verify(service, never()).inbox(any(), any(Boolean.class), any());
     }
 }

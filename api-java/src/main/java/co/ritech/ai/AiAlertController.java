@@ -60,7 +60,7 @@ public class AiAlertController {
         }
     }
 
-    @GetMapping("/api/simulations/{id}/alert")
+    @GetMapping("/api/v1/simulations/{id}/alert")
     @Operation(summary = "AI alert of a simulation (owner or ADMIN). 202 while it is still being generated")
     public ResponseEntity<AiAlertResponse> forSimulation(
             @Parameter(hidden = true) CurrentUser user, @PathVariable UUID id) {
@@ -70,7 +70,7 @@ public class AiAlertController {
         return ResponseEntity.status(status).body(AiAlertResponse.from(alert));
     }
 
-    @GetMapping("/api/me/alerts")
+    @GetMapping("/api/v1/me/alerts")
     @Operation(summary = "Own AI alerts, newest first")
     public Page<AiAlertResponse> mine(
             @Parameter(hidden = true) CurrentUser user,

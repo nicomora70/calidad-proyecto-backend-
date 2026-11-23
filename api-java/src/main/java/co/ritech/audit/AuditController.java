@@ -21,7 +21,7 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 @RestController
-@RequestMapping("/api/audit")
+@RequestMapping("/api/v1/audit")
 @Tag(name = "Audit")
 @SecurityRequirement(name = "bearer")
 public class AuditController {

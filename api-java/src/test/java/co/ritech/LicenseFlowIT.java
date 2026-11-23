@@ -58,6 +58,7 @@ class LicenseFlowIT {
         registry.add("ritech.security.bootstrap-admin-password", () -> BOOTSTRAP_PASSWORD);
         registry.add("ritech.market.provider", () -> "fixed");
         registry.add("ritech.license.mode", () -> "enforced");
+        registry.add("ritech.rate-limit.auth-per-minute", () -> "1000");
         registry.add("ritech.license.file", () -> "/nonexistent/license.json");
         registry.add(
                 "ritech.license.public-key-location",
@@ -84,61 +85,65 @@ class LicenseFlowIT {
         String admin = adminToken();
 
         // No license: read-only
-        mvc.perform(get("/api/license").header("Authorization", "Bearer " + admin))
+        mvc.perform(get("/api/v1/license").header("Authorization", "Bearer " + admin))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.state").value("MISSING"));
-        postJson("/api/simulations", admin, "{\"initialCapital\": 1000000}")
+        postJson("/api/v1/simulations", admin, "{\"initialCapital\": 1000000}")
                 .andExpect(status().isPaymentRequired())
                 .andExpect(jsonPath("$.code").value("LICENSE_EXPIRED"));
-        mvc.perform(get("/api/me/simulations").header("Authorization", "Bearer " + admin))
+        mvc.perform(get("/api/v1/me/simulations").header("Authorization", "Bearer " + admin))
                 .andExpect(status().isOk());
 
         // Invalid licenses are rejected
         var expired = LICENSES.issue("BASIC", 2, TODAY.minusDays(30), TODAY.minusDays(1));
-        postJson("/api/license", admin, TestLicenses.json(expired))
+        postJson("/api/v1/license", admin, TestLicenses.json(expired))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("LICENSE_INVALID"));
         var foreign = new TestLicenses().issue("ENTERPRISE", 99, TODAY, TODAY.plusDays(365));
-        postJson("/api/license", admin, TestLicenses.json(foreign))
+        postJson("/api/v1/license", admin, TestLicenses.json(foreign))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("LICENSE_INVALID"));
 
         // BASIC license for 2 users
-        postJson("/api/license", admin, TestLicenses.json(LICENSES.issue("BASIC", 2, TODAY, TODAY.plusDays(365))))
+        postJson("/api/v1/license", admin, TestLicenses.json(LICENSES.issue("BASIC", 2, TODAY, TODAY.plusDays(365))))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.state").value("ACTIVE"))
                 .andExpect(jsonPath("$.plan").value("BASIC"))
                 .andExpect(jsonPath("$.activeUsers").value(1));
 
-        postJson("/api/users", admin, """
+        postJson("/api/v1/users", admin, """
                 {"fullName":"Ana","email":"ana@cliente.co","role":"INVESTOR","temporaryPassword":"temporal-123"}""").andExpect(status().isCreated());
-        postJson("/api/users", admin, """
+        postJson("/api/v1/users", admin, """
                 {"fullName":"Luis","email":"luis@cliente.co","role":"INVESTOR","temporaryPassword":"temporal-123"}""")
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.code").value("LICENSE_USER_LIMIT"));
 
         // Simulations are in BASIC; AI alerts, news and exports are not
         String simulationId = read(
-                postJson("/api/simulations", admin, "{\"initialCapital\": 1000000}")
+                postJson("/api/v1/simulations", admin, "{\"initialCapital\": 1000000}")
                         .andExpect(status().isCreated()),
                 "$.id");
-        mvc.perform(get("/api/simulations/" + simulationId + "/alert").header("Authorization", "Bearer " + admin))
+        mvc.perform(get("/api/v1/simulations/" + simulationId + "/alert").header("Authorization", "Bearer " + admin))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.code").value("MODULE_NOT_LICENSED"));
-        mvc.perform(get("/api/news").header("Authorization", "Bearer " + admin)).andExpect(status().isForbidden());
-        mvc.perform(get("/api/me/simulations/export").header("Authorization", "Bearer " + admin))
+        mvc.perform(get("/api/v1/news").header("Authorization", "Bearer " + admin))
+                .andExpect(status().isForbidden());
+        mvc.perform(get("/api/v1/me/simulations/export").header("Authorization", "Bearer " + admin))
                 .andExpect(status().isForbidden());
 
         // Branding falls back to the licensed company (public endpoint)
-        mvc.perform(get("/api/settings/branding"))
+        mvc.perform(get("/api/v1/settings/branding"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.companyName").value("Cliente S.A.S."));
 
         // Upgrade to ENTERPRISE: exports become available
-        postJson("/api/license", admin, TestLicenses.json(LICENSES.issue("ENTERPRISE", 10, TODAY, TODAY.plusDays(365))))
+        postJson(
+                        "/api/v1/license",
+                        admin,
+                        TestLicenses.json(LICENSES.issue("ENTERPRISE", 10, TODAY, TODAY.plusDays(365))))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.plan").value("ENTERPRISE"));
-        mvc.perform(get("/api/me/simulations/export").header("Authorization", "Bearer " + admin))
+        mvc.perform(get("/api/v1/me/simulations/export").header("Authorization", "Bearer " + admin))
                 .andExpect(status().isOk())
                 .andExpect(content().contentTypeCompatibleWith("text/csv"));
     }
@@ -146,15 +151,15 @@ class LicenseFlowIT {
     private String adminToken() throws Exception {
         String temp = read(
                 postJson(
-                                "/api/auth/login",
+                                "/api/v1/auth/login",
                                 null,
                                 "{\"email\":\"admin@cliente.co\",\"password\":\"" + BOOTSTRAP_PASSWORD + "\"}")
                         .andExpect(status().isOk()),
                 "$.accessToken");
-        // change-password is under /api/auth: allowed even in read-only mode
+        // change-password is under /api/v1/auth: allowed even in read-only mode
         return read(
                 postJson(
-                                "/api/auth/change-password",
+                                "/api/v1/auth/change-password",
                                 temp,
                                 "{\"currentPassword\":\"" + BOOTSTRAP_PASSWORD + "\",\"newPassword\":\""
                                         + ADMIN_PASSWORD + "\"}")

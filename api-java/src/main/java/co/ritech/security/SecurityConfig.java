@@ -2,6 +2,7 @@ package co.ritech.security;
 
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Set;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 
@@ -23,7 +24,10 @@ import org.springframework.security.oauth2.server.resource.authentication.JwtAut
 import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
 import org.springframework.security.oauth2.server.resource.web.BearerTokenResolver;
 import org.springframework.security.oauth2.server.resource.web.DefaultBearerTokenResolver;
+import org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter.ReferrerPolicy;
+import org.springframework.security.web.header.writers.StaticHeadersWriter;
 import org.springframework.util.AntPathMatcher;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
@@ -32,6 +36,7 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.jose.jwk.source.ImmutableSecret;
 
+import co.ritech.common.RequestIdFilter;
 import co.ritech.config.RitechProperties;
 
 @Configuration
@@ -39,29 +44,54 @@ import co.ritech.config.RitechProperties;
 public class SecurityConfig {
 
     private static final String[] PUBLIC_ENDPOINTS = {
-        "/api/health",
-        "/api/auth/login",
-        "/api/auth/refresh",
-        "/api/auth/logout",
-        "/actuator/health",
-        "/actuator/health/**",
+        "/api/v1/health",
+        "/api/v1/auth/login",
+        "/api/v1/auth/refresh",
+        "/api/v1/auth/logout",
+        "/livez",
+        "/readyz",
         "/swagger-ui.html",
         "/swagger-ui/**",
         "/v3/api-docs",
+        "/v3/api-docs.yaml",
         "/v3/api-docs/**"
     };
 
+    private static final Set<String> PROBES = Set.of("/livez", "/readyz", "/actuator/health");
+
+    /** API answers JSON only; Swagger UI (same origin) needs its own scripts, styles and data: images. */
+    private static final String CSP = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; "
+            + "img-src 'self' data:; object-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'";
+
     @Bean
     SecurityFilterChain securityFilterChain(
-            HttpSecurity http, ObjectMapper mapper, JwtAuthenticationConverter converter) throws Exception {
+            HttpSecurity http, ObjectMapper mapper, JwtAuthenticationConverter converter, RitechProperties properties)
+            throws Exception {
+        if (properties.security().requireHttps()) {
+            // Behind the proxy, X-Forwarded-Proto decides (server.forward-headers-strategy=framework).
+            // Probes stay on plain HTTP for the container healthcheck.
+            http.redirectToHttps(https -> https.requestMatchers(request -> !PROBES.contains(request.getRequestURI())));
+        }
         http.csrf(csrf -> csrf.disable()) // stateless API, bearer tokens only (no cookies)
                 .cors(cors -> {})
+                .headers(headers -> headers.contentSecurityPolicy(csp -> csp.policyDirectives(CSP))
+                        .frameOptions(frame -> frame.deny())
+                        .referrerPolicy(ref -> ref.policy(ReferrerPolicy.NO_REFERRER))
+                        .httpStrictTransportSecurity(
+                                hsts -> hsts.includeSubDomains(true).maxAgeInSeconds(31_536_000))
+                        .addHeaderWriter(new StaticHeadersWriter(
+                                "Permissions-Policy", "camera=(), microphone=(), geolocation=()")))
+                .addFilterAfter(
+                        new RateLimitFilter(properties.rateLimit(), mapper), BearerTokenAuthenticationFilter.class)
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth.requestMatchers(HttpMethod.OPTIONS, "/**")
                         .permitAll()
                         .requestMatchers(PUBLIC_ENDPOINTS)
                         .permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/settings/branding")
+                        // Management port (MANAGEMENT_PORT, internal network only; not published)
+                        .requestMatchers("/actuator/**")
+                        .permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/settings/branding")
                         .permitAll()
                         .anyRequest()
                         .authenticated())
@@ -75,7 +105,7 @@ public class SecurityConfig {
     }
 
     /**
-     * A stale access token sent to a public endpoint (typically /api/auth/refresh)
+     * A stale access token sent to a public endpoint (typically /api/v1/auth/refresh)
      * must not cause a 401: the token is simply ignored there.
      */
     private static BearerTokenResolver publicEndpointsIgnoreToken() {
@@ -138,10 +168,16 @@ public class SecurityConfig {
         var config = new CorsConfiguration();
         config.setAllowedOrigins(properties.cors().allowedOrigins());
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
-        config.setAllowedHeaders(List.of("Authorization", "Content-Type"));
+        config.setAllowedHeaders(List.of("Authorization", "Content-Type", RequestIdFilter.HEADER));
+        config.setExposedHeaders(List.of(
+                RequestIdFilter.HEADER,
+                "Content-Disposition",
+                "Retry-After",
+                "X-RateLimit-Limit",
+                "X-RateLimit-Remaining"));
         config.setMaxAge(3600L);
         var source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/api/**", config);
+        source.registerCorsConfiguration("/api/v1/**", config);
         return source;
     }
 }

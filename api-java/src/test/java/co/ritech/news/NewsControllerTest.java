@@ -53,14 +53,14 @@ class NewsControllerTest {
     void adminCanRefresh() throws Exception {
         when(ingestion.refresh()).thenReturn(new RefreshResult(3, 2));
 
-        mvc.perform(post("/api/news/refresh").with(as(Role.ADMIN)))
+        mvc.perform(post("/api/v1/news/refresh").with(as(Role.ADMIN)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.inserted").value(2));
     }
 
     @Test
     void investorCannotRefresh() throws Exception {
-        mvc.perform(post("/api/news/refresh").with(as(Role.INVESTOR))).andExpect(status().isForbidden());
+        mvc.perform(post("/api/v1/news/refresh").with(as(Role.INVESTOR))).andExpect(status().isForbidden());
         verify(ingestion, never()).refresh();
     }
 
@@ -68,13 +68,13 @@ class NewsControllerTest {
     void quotaExceededIs429() throws Exception {
         when(ingestion.refresh()).thenThrow(new NewsQuotaExceededException(4));
 
-        mvc.perform(post("/api/news/refresh").with(as(Role.ADMIN)))
+        mvc.perform(post("/api/v1/news/refresh").with(as(Role.ADMIN)))
                 .andExpect(status().isTooManyRequests())
                 .andExpect(jsonPath("$.code").value("NEWS_QUOTA_EXCEEDED"));
     }
 
     @Test
     void anonymousIsUnauthorized() throws Exception {
-        mvc.perform(get("/api/news")).andExpect(status().isUnauthorized());
+        mvc.perform(get("/api/v1/news")).andExpect(status().isUnauthorized());
     }
 }

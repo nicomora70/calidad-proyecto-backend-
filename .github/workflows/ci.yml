@@ -50,74 +50,118 @@ jobs:
       JWT_SECRET: ci-only-secret-ci-only-secret-ci-only-secret
       BOOTSTRAP_ADMIN_EMAIL: admin@ci.test.co
       BOOTSTRAP_ADMIN_PASSWORD: bootstrap-ci-1
+      # The k6 load test sends ~20 req/s with one investor token
+      RATE_LIMIT_USER_PER_MINUTE: "100000"
       API: http://localhost:8080
     steps:
       - uses: actions/checkout@v5
       - name: Start stack
         run: docker compose up -d --build --wait --wait-timeout 300
       - name: Health
-        run: curl -fsS $API/api/health
+        run: curl -fsS $API/api/v1/health
       - name: Anonymous access is rejected
-        run: test "$(curl -s -o /dev/null -w '%{http_code}' $API/api/me)" = "401"
+        run: test "$(curl -s -o /dev/null -w '%{http_code}' $API/api/v1/me)" = "401"
       - name: End-to-end flow (admin -> investor -> simulation -> dashboard)
         run: |
           set -euo pipefail
           post() { curl -fsS -X POST "$API$1" -H 'Content-Type: application/json' ${3:+-H "Authorization: Bearer $3"} -d "$2"; }
 
-          tmp=$(post /api/auth/login "{\"email\":\"$BOOTSTRAP_ADMIN_EMAIL\",\"password\":\"$BOOTSTRAP_ADMIN_PASSWORD\"}" | jq -r .accessToken)
-          admin=$(post /api/auth/change-password "{\"currentPassword\":\"$BOOTSTRAP_ADMIN_PASSWORD\",\"newPassword\":\"admin-ci-final-1\"}" "$tmp" | jq -r .accessToken)
+          tmp=$(post /api/v1/auth/login "{\"email\":\"$BOOTSTRAP_ADMIN_EMAIL\",\"password\":\"$BOOTSTRAP_ADMIN_PASSWORD\"}" | jq -r .accessToken)
+          admin=$(post /api/v1/auth/change-password "{\"currentPassword\":\"$BOOTSTRAP_ADMIN_PASSWORD\",\"newPassword\":\"admin-ci-final-1\"}" "$tmp" | jq -r .accessToken)
 
-          post /api/users '{"fullName":"CI Investor","email":"investor@ci.test.co","role":"INVESTOR","temporaryPassword":"temporal-123"}' "$admin" | jq .
-          tmp=$(post /api/auth/login '{"email":"investor@ci.test.co","password":"temporal-123"}' | jq -r .accessToken)
-          inv=$(post /api/auth/change-password '{"currentPassword":"temporal-123","newPassword":"investor-ci-1"}' "$tmp" | jq -r .accessToken)
+          post /api/v1/users '{"fullName":"CI Investor","email":"investor@ci.test.co","role":"INVESTOR","temporaryPassword":"temporal-123"}' "$admin" | jq .
+          tmp=$(post /api/v1/auth/login '{"email":"investor@ci.test.co","password":"temporal-123"}' | jq -r .accessToken)
+          inv=$(post /api/v1/auth/change-password '{"currentPassword":"temporal-123","newPassword":"investor-ci-1"}' "$tmp" | jq -r .accessToken)
 
           # fixed variation 1% -> return 2% -> 1.020.000
-          sim=$(post /api/simulations '{"initialCapital": 1000000}' "$inv")
+          sim=$(post /api/v1/simulations '{"initialCapital": 1000000}' "$inv")
           echo "$sim" | jq .
           test "$(echo "$sim" | jq -r .finalAmount)" = "1020000"  || test "$(echo "$sim" | jq -r .finalAmount)" = "1020000.00"
 
-          code=$(curl -s -o /dev/null -w '%{http_code}' -X POST $API/api/simulations \
+          code=$(curl -s -o /dev/null -w '%{http_code}' -X POST $API/api/v1/simulations \
             -H 'Content-Type: application/json' -H "Authorization: Bearer $inv" -d '{"initialCapital": 50000}')
           test "$code" = "400"
 
-          curl -fsS "$API/api/me/simulations" -H "Authorization: Bearer $inv" | jq -e '.page.totalElements == 1'
-          curl -fsS "$API/api/dashboard/statistics" -H "Authorization: Bearer $admin" | jq -e '.count == 1'
-          test "$(curl -s -o /dev/null -w '%{http_code}' $API/api/dashboard/statistics -H "Authorization: Bearer $inv")" = "403"
+          curl -fsS "$API/api/v1/me/simulations" -H "Authorization: Bearer $inv" | jq -e '.page.totalElements == 1'
+          curl -fsS "$API/api/v1/dashboard/statistics" -H "Authorization: Bearer $admin" | jq -e '.count == 1'
+          test "$(curl -s -o /dev/null -w '%{http_code}' $API/api/v1/dashboard/statistics -H "Authorization: Bearer $inv")" = "403"
 
           # AI alert (template provider) is generated asynchronously: wait until it is DONE
           sim_id=$(echo "$sim" | jq -r .id)
           for i in $(seq 1 20); do
-            status=$(curl -fsS "$API/api/simulations/$sim_id/alert" -H "Authorization: Bearer $inv" | jq -r .status)
+            status=$(curl -fsS "$API/api/v1/simulations/$sim_id/alert" -H "Authorization: Bearer $inv" | jq -r .status)
             [ "$status" != "PENDING" ] && break
             sleep 0.5
           done
           test "$status" = "DONE"
 
           # News: the fixed provider was ingested on startup; sentiment comes from calc-engine
-          curl -fsS "$API/api/news" -H "Authorization: Bearer $inv" | jq -e '.page.totalElements == 3'
-          curl -fsS "$API/api/news/sentiment" -H "Authorization: Bearer $inv" | jq -e '.sentiment.count >= 0 and (.sentiment.label | length > 0)'
-          test "$(curl -s -o /dev/null -w '%{http_code}' -X POST $API/api/news/refresh -H "Authorization: Bearer $inv")" = "403"
+          curl -fsS "$API/api/v1/news" -H "Authorization: Bearer $inv" | jq -e '.page.totalElements == 3'
+          curl -fsS "$API/api/v1/news/sentiment" -H "Authorization: Bearer $inv" | jq -e '.sentiment.count >= 0 and (.sentiment.label | length > 0)'
+          test "$(curl -s -o /dev/null -w '%{http_code}' -X POST $API/api/v1/news/refresh -H "Authorization: Bearer $inv")" = "403"
 
           # Notifications: the ready AI alert is in the investor's inbox (no SMTP in CI: in-app only)
           for i in $(seq 1 20); do
-            unread=$(curl -fsS "$API/api/me/notifications/unread-count" -H "Authorization: Bearer $inv" | jq -r .count)
+            unread=$(curl -fsS "$API/api/v1/me/notifications/unread-count" -H "Authorization: Bearer $inv" | jq -r .count)
             [ "$unread" -ge 1 ] && break
             sleep 0.5
           done
           test "$unread" -ge 1
-          curl -fsS "$API/api/me/notifications" -H "Authorization: Bearer $inv" | jq -e '.content[0].type == "AI_ALERT_READY"'
-          curl -fsS "$API/api/me/notification-preferences" -H "Authorization: Bearer $inv" | jq -e '.emailAvailable == false'
-          curl -fsS -X POST "$API/api/me/notifications/read-all" -H "Authorization: Bearer $inv" | jq -e '.updated >= 1'
-          curl -fsS "$API/actuator/health" | jq -e '.status == "UP"'
+          curl -fsS "$API/api/v1/me/notifications" -H "Authorization: Bearer $inv" | jq -e '.content[0].type == "AI_ALERT_READY"'
+          curl -fsS "$API/api/v1/me/notification-preferences" -H "Authorization: Bearer $inv" | jq -e '.emailAvailable == false'
+          curl -fsS -X POST "$API/api/v1/me/notifications/read-all" -H "Authorization: Bearer $inv" | jq -e '.updated >= 1'
+          curl -fsS "$API/readyz" | jq -e '.status == "UP"'
 
           # Phase 5: public branding, license disabled in CI, projection needs 5 market days (only 1 here)
-          curl -fsS "$API/api/settings/branding" | jq -e '.productName == "RiTech"'
-          curl -fsS "$API/api/license" -H "Authorization: Bearer $admin" | jq -e '.state == "DISABLED"'
-          code=$(curl -s -o /dev/null -w '%{http_code}' -X POST $API/api/projections \
+          curl -fsS "$API/api/v1/settings/branding" | jq -e '.productName == "RiTech"'
+          curl -fsS "$API/api/v1/license" -H "Authorization: Bearer $admin" | jq -e '.state == "DISABLED"'
+          code=$(curl -s -o /dev/null -w '%{http_code}' -X POST $API/api/v1/projections \
             -H 'Content-Type: application/json' -H "Authorization: Bearer $inv" -d '{"initialCapital": 1000000, "horizonDays": 20}')
           test "$code" = "422"
-          curl -fsS "$API/api/me/simulations/export" -H "Authorization: Bearer $inv" -o mine.csv
+          curl -fsS "$API/api/v1/me/simulations/export" -H "Authorization: Bearer $inv" -o mine.csv
           grep -q "1000000.00" mine.csv
+      - name: Hardening (headers, CORS, internal metrics, API v1 contract)
+        run: |
+          set -euo pipefail
+          headers=$(curl -fsS -D - -o /dev/null $API/api/v1/health)
+          echo "$headers"
+          echo "$headers" | grep -qi '^x-content-type-options: nosniff'
+          echo "$headers" | grep -qi '^content-security-policy:'
+          echo "$headers" | grep -qi '^x-ratelimit-remaining:'
+          test "$(curl -s -o /dev/null -w '%{http_code}' -X OPTIONS $API/api/v1/health \
+            -H 'Origin: https://evil.example' -H 'Access-Control-Request-Method: GET')" = "403"
+          # The old unversioned path no longer exists
+          test "$(curl -s -o /dev/null -w '%{http_code}' $API/api/health)" != "200"
+          # Actuator is not on the public port; Prometheus answers on the internal management port
+          test "$(curl -s -o /dev/null -w '%{http_code}' $API/actuator/prometheus)" != "200"
+          docker compose exec -T api curl -fsS http://localhost:8081/actuator/prometheus | grep -q '^http_server_requests_seconds_count'
+          curl -fsS $API/v3/api-docs.yaml -o openapi.yaml
+          grep -q '/api/v1/simulations' openapi.yaml
+      - name: Upload OpenAPI contract
+        uses: actions/upload-artifact@v5
+        with:
+          name: openapi
+          path: openapi.yaml
+      - name: Load test with k6 (25010 time behaviour, p95 <= 500 ms with 20 VUs)
+        run: |
+          docker run --rm --network host --user "$(id -u)" -v "$PWD/ops/k6:/scripts" \
+            -e API=$API -e EMAIL=investor@ci.test.co -e PASSWORD=investor-ci-1 \
+            grafana/k6:0.54.0 run --summary-export=/scripts/k6-summary.json /scripts/simulations.js
+      - name: Upload k6 summary
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: k6-summary
+          path: ops/k6/k6-summary.json
+      - name: Login rate limit returns 429
+        run: |
+          set -euo pipefail
+          for i in $(seq 1 25); do
+            code=$(curl -s -o /dev/null -w '%{http_code}' -X POST $API/api/v1/auth/login \
+              -H 'Content-Type: application/json' -d '{"email":"nobody@ci.test.co","password":"wrong-pass-1"}')
+            [ "$code" = "429" ] && break
+          done
+          test "$code" = "429"
       - name: Backup and restore are verified (25010 recoverability)
         run: |
           set -e

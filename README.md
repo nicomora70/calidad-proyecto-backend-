@@ -28,9 +28,13 @@ docker compose up -d --build
 
 | URL | Qué es |
 |---|---|
-| http://localhost:8080/api/health | Estado de la API (público) |
+| http://localhost:8080/api/v1/health | Estado de la API (público) |
 | http://localhost:8080/swagger-ui.html | Documentación interactiva (botón **Authorize** para el token) |
-| http://localhost:8080/actuator/health | Salud, incluida la BD (público) |
+| http://localhost:8080/readyz | Sondas de vida y disponibilidad (`/livez`, `/readyz`, públicas) |
+| http://localhost:8080/v3/api-docs.yaml | Contrato OpenAPI para el frontend ([integración](docs/integracion-frontend.md)) |
+
+Actuator (salud con la BD, métricas de Prometheus en `/actuator/prometheus`) escucha en el
+puerto interno **8081**, que no se publica: solo es accesible desde la red de Docker.
 
 Por defecto, `MARKET_PROVIDER=fixed` usa una variación constante (`FIXED_VARIATION_PCT`)
 para poder probar sin clave. Para datos reales, se pone `MARKET_PROVIDER=alphavantage` y
@@ -43,19 +47,19 @@ API=http://localhost:8080
 json() { curl -s -X POST "$API$1" -H 'Content-Type: application/json' ${3:+-H "Authorization: Bearer $3"} -d "$2"; }
 
 # 1. El admin inicial entra con la contraseña temporal y la cambia
-TMP=$(json /api/auth/login '{"email":"admin@empresa.com","password":"<temporal>"}' | jq -r .accessToken)
-ADMIN=$(json /api/auth/change-password '{"currentPassword":"<temporal>","newPassword":"<definitiva>"}' "$TMP" | jq -r .accessToken)
+TMP=$(json /api/v1/auth/login '{"email":"admin@empresa.com","password":"<temporal>"}' | jq -r .accessToken)
+ADMIN=$(json /api/v1/auth/change-password '{"currentPassword":"<temporal>","newPassword":"<definitiva>"}' "$TMP" | jq -r .accessToken)
 
 # 2. El admin crea un inversionista (con su propia contraseña temporal)
-json /api/users '{"fullName":"Ana","email":"ana@empresa.com","role":"INVESTOR","temporaryPassword":"temporal-123"}' "$ADMIN"
+json /api/v1/users '{"fullName":"Ana","email":"ana@empresa.com","role":"INVESTOR","temporaryPassword":"temporal-123"}' "$ADMIN"
 
 # 3. El inversionista entra, cambia su contraseña y simula
-TMP=$(json /api/auth/login '{"email":"ana@empresa.com","password":"temporal-123"}' | jq -r .accessToken)
-INV=$(json /api/auth/change-password '{"currentPassword":"temporal-123","newPassword":"ana-segura-2026"}' "$TMP" | jq -r .accessToken)
-json /api/simulations '{"initialCapital": 1000000}' "$INV"
+TMP=$(json /api/v1/auth/login '{"email":"ana@empresa.com","password":"temporal-123"}' | jq -r .accessToken)
+INV=$(json /api/v1/auth/change-password '{"currentPassword":"temporal-123","newPassword":"ana-segura-2026"}' "$TMP" | jq -r .accessToken)
+json /api/v1/simulations '{"initialCapital": 1000000}' "$INV"
 
-curl -s "$API/api/me/simulations" -H "Authorization: Bearer $INV"
-curl -s "$API/api/dashboard/statistics" -H "Authorization: Bearer $ADMIN"
+curl -s "$API/api/v1/me/simulations" -H "Authorization: Bearer $INV"
+curl -s "$API/api/v1/dashboard/statistics" -H "Authorization: Bearer $ADMIN"
 ```
 
 ## Desarrollo local (sin Docker)

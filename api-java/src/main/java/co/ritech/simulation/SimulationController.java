@@ -30,7 +30,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 
 @RestController
-@RequestMapping("/api/simulations")
+@RequestMapping("/api/v1/simulations")
 @Tag(name = "Simulations")
 @SecurityRequirement(name = "bearer")
 public class SimulationController {
@@ -61,7 +61,8 @@ public class SimulationController {
     @GetMapping
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(
-            summary = "All simulations, filterable by user and date range (ADMIN). Investors use /api/me/simulations")
+            summary =
+                    "All simulations, filterable by user and date range (ADMIN). Investors use /api/v1/me/simulations")
     public Page<SimulationResponse> list(
             @RequestParam(required = false) UUID userId,
             @RequestParam(required = false) LocalDate from,

@@ -19,7 +19,7 @@ import jakarta.servlet.http.HttpServletResponse;
 public class PasswordChangeRequiredInterceptor implements HandlerInterceptor {
 
     private static final Set<String> ALLOWED =
-            Set.of("/api/auth/change-password", "/api/auth/logout", "/api/auth/refresh", "/api/me");
+            Set.of("/api/v1/auth/change-password", "/api/v1/auth/logout", "/api/v1/auth/refresh", "/api/v1/me");
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {

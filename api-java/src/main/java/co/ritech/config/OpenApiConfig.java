@@ -12,8 +12,8 @@ import io.swagger.v3.oas.annotations.security.SecurityScheme;
         info =
                 @Info(
                         title = "RiTech API",
-                        version = "0.2.0",
-                        description = "Investment simulation backend. Authenticate with POST /api/auth/login "
+                        version = "1.0.0",
+                        description = "Investment simulation backend. Authenticate with POST /api/v1/auth/login "
                                 + "and send the access token as 'Authorization: Bearer <token>'."))
 @SecurityScheme(name = "bearer", type = SecuritySchemeType.HTTP, scheme = "bearer", bearerFormat = "JWT")
 public class OpenApiConfig {}

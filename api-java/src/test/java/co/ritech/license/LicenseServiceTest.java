@@ -71,6 +71,7 @@ class LicenseServiceTest {
                 base.news(),
                 base.notifications(),
                 new RitechProperties.License(mode, "/nonexistent/license.json", "unused", 30),
+                base.rateLimit(),
                 base.timezone());
         return new LicenseService(
                 new LicenseVerifier(licenses.publicKey(), new ObjectMapper()),

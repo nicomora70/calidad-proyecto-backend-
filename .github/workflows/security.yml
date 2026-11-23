@@ -1,0 +1,72 @@
+name: Security
+
+# Dependency and image scanning (ISO/IEC 27001 A.8.8, OWASP ASVS V14).
+# Trivy runs on every PR; OWASP Dependency-Check is slow (NVD download), so it runs weekly or on demand.
+on:
+  pull_request:
+  push:
+    branches: [main]
+  schedule:
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  trivy:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: ritech-api
+            context: api-java
+          - name: ritech-calc-engine
+            context: calc-engine
+    steps:
+      - uses: actions/checkout@v5
+      - name: Build image
+        run: docker build -t ${{ matrix.name }}:scan ${{ matrix.context }}
+      # Fails on fixable CRITICAL vulnerabilities (OS packages and libraries in the image)
+      - uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: ${{ matrix.name }}:scan
+          severity: CRITICAL
+          ignore-unfixed: true
+          exit-code: "1"
+      # HIGH ones are reported in the log without failing the build
+      - uses: aquasecurity/trivy-action@0.28.0
+        if: always()
+        with:
+          image-ref: ${{ matrix.name }}:scan
+          severity: HIGH
+          ignore-unfixed: true
+          exit-code: "0"
+
+  dependency-check:
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: api-java
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+      - uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository/org/owasp/dependency-check-data
+          key: nvd-${{ github.run_id }}
+          restore-keys: nvd-
+      - run: chmod +x mvnw && ./mvnw -B -Powasp -DskipTests verify
+        env:
+          NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
+      - if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: dependency-check-report
+          path: api-java/target/dependency-check-report.*

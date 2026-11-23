@@ -73,10 +73,10 @@ Timeout de 5 s. Ante un fallo, la API responde `503 CALC_ENGINE_UNAVAILABLE`.
 ### Autenticación
 
 ```
-POST /api/auth/login            {email, password}           → TokenResponse
-POST /api/auth/refresh          {refreshToken}              → TokenResponse (el anterior queda revocado)
-POST /api/auth/logout           {refreshToken}              → 204
-POST /api/auth/change-password  {currentPassword, newPassword}  (con Bearer) → TokenResponse
+POST /api/v1/auth/login            {email, password}           → TokenResponse
+POST /api/v1/auth/refresh          {refreshToken}              → TokenResponse (el anterior queda revocado)
+POST /api/v1/auth/logout           {refreshToken}              → 204
+POST /api/v1/auth/change-password  {currentPassword, newPassword}  (con Bearer) → TokenResponse
 
 TokenResponse = { accessToken, tokenType: "Bearer", expiresIn (s), refreshToken,
                   refreshTokenExpiresAt, user: { id, fullName, email, role, active,
@@ -87,7 +87,7 @@ Flujo recomendado en el frontend:
 1. Login. Si `user.mustChangePassword` es `true`, mostrar la pantalla de cambio de contraseña y
    reemplazar los tokens por los que devuelve `change-password`.
 2. Enviar `Authorization: Bearer <accessToken>` en cada petición.
-3. Ante un `401 TOKEN_EXPIRED`, llamar a `/api/auth/refresh` **una sola vez** y reintentar; si
+3. Ante un `401 TOKEN_EXPIRED`, llamar a `/api/v1/auth/refresh` **una sola vez** y reintentar; si
    responde `401 INVALID_REFRESH_TOKEN`, volver al login.
 4. Guardar el refresh token fuera del alcance de scripts de terceros y usar siempre el último
    recibido, porque cada uno sirve una sola vez.
@@ -96,24 +96,26 @@ Flujo recomendado en el frontend:
 
 | Endpoint | Rol |
 |---|---|
-| `GET /api/me`, `GET /api/me/simulations`, `GET /api/me/alerts`, `/api/me/notifications/**`, `/api/me/notification-preferences` | cualquiera autenticado |
-| `POST /api/simulations` | INVESTOR, ADMIN |
-| `GET /api/simulations/{id}`, `GET /api/simulations/{id}/alert` | dueño o ADMIN |
-| `GET /api/simulations`, `GET /api/dashboard/statistics` | ADMIN |
-| `/api/users/**` | ADMIN |
-| `GET /api/audit` | ADMIN, IT_MANAGER |
-| `GET /api/news`, `GET /api/news/sentiment` | cualquiera autenticado |
-| `POST /api/news/refresh` | ADMIN |
-| `GET /api/settings/branding` | público |
-| `PUT /api/settings/branding`, `GET /api/simulations/export` | ADMIN |
-| `POST /api/projections` | INVESTOR, ADMIN (plan Empresarial) |
-| `GET /api/me/simulations/export` | cualquiera autenticado |
-| `GET /api/license`, `POST /api/license`, `GET /api/audit/export` | ADMIN, IT_MANAGER |
+| `GET /api/v1/me`, `GET /api/v1/me/simulations`, `GET /api/v1/me/alerts`, `/api/v1/me/notifications/**`, `/api/v1/me/notification-preferences` | cualquiera autenticado |
+| `POST /api/v1/simulations` | INVESTOR, ADMIN |
+| `GET /api/v1/simulations/{id}`, `GET /api/v1/simulations/{id}/alert` | dueño o ADMIN |
+| `GET /api/v1/simulations`, `GET /api/v1/dashboard/statistics` | ADMIN |
+| `/api/v1/users/**` | ADMIN |
+| `GET /api/v1/audit` | ADMIN, IT_MANAGER |
+| `GET /api/v1/news`, `GET /api/v1/news/sentiment` | cualquiera autenticado |
+| `POST /api/v1/news/refresh` | ADMIN |
+| `GET /api/v1/settings/branding` | público |
+| `PUT /api/v1/settings/branding`, `GET /api/v1/simulations/export` | ADMIN |
+| `POST /api/v1/projections` | INVESTOR, ADMIN (plan Empresarial) |
+| `GET /api/v1/me/simulations/export` | cualquiera autenticado |
+| `GET /api/v1/license`, `POST /api/v1/license`, `GET /api/v1/audit/export` | ADMIN, IT_MANAGER |
 
 ### Convenciones
 
+- Actuator (salud detallada y métricas de Prometheus) en el puerto de gestión 8081, solo en la red interna; `/livez` y `/readyz` en el 8080.
+- Seguridad transversal: rate limiting (Bucket4j) tras la autenticación, cabeceras de seguridad, CORS con lista blanca y HTTPS obligatorio opcional (`REQUIRE_HTTPS`).
 - Documentación en vivo: `http://<host>:8080/swagger-ui.html` (botón **Authorize** para pegar el token) · JSON en `/v3/api-docs`.
-- Prefijo `/api`, JSON en `camelCase`, errores RFC 7807 con `code` (ver `logica-negocio.md`).
+- Prefijo `/api/v1` (versionado), JSON en `camelCase`, errores RFC 7807 con `code` (ver `logica-negocio.md`).
 - Paginación de Spring: `?page=0&size=20&sort=createdAt,desc` → `{ content, page: { size, number, totalElements, totalPages } }`.
 - CORS: solo los orígenes de `CORS_ALLOWED_ORIGINS`.
 
@@ -123,13 +125,13 @@ Flujo recomendado en el frontend:
 co.ritech
 ├── config       propiedades (RitechProperties), CORS, Clock
 ├── common       BusinessException, ApiExceptionHandler (RFC 7807)
-├── health       /api/health
+├── health       /api/v1/health
 ├── market       proveedor de mercado (Alpha Vantage / fijo) + caché
 ├── engine       cliente del calc-engine
 ├── simulation   entidad, servicio, controlador
 ├── dashboard    estadísticas globales
 ├── audit        registro de auditoría
-├── user         usuarios, roles, /api/me, admin inicial
+├── user         usuarios, roles, /api/v1/me, admin inicial
 ├── auth         login, refresh tokens, logout, cambio de contraseña
 ├── security     configuración de Spring Security, JWT, CurrentUser
 ├── license      licencia firmada, módulos por plan y modo solo lectura
