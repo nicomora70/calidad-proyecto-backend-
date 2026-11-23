@@ -1,5 +1,5 @@
 # ---- build stage ----
-FROM eclipse-temurin:21-jdk AS build
+FROM eclipse-temurin:24-jdk AS build
 WORKDIR /workspace
 
 COPY .mvn .mvn
@@ -10,7 +10,7 @@ COPY src src
 RUN ./mvnw -B -q package -DskipTests
 
 # ---- runtime stage ----
-FROM eclipse-temurin:21-jre
+FROM eclipse-temurin:24-jre
 RUN apt-get update && apt-get install -y --no-install-recommends curl \
     && rm -rf /var/lib/apt/lists/* \
     && useradd --create-home --uid 10001 ritech
