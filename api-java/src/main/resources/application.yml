@@ -28,7 +28,7 @@ spring:
     locations: classpath:db/migration
 
 server:
-  port: 8080
+  port: ${PORT:8080}  # PaaS (Railway, Render) inject PORT
   # Trust X-Forwarded-* from the reverse proxy (client IP in the audit log)
   forward-headers-strategy: framework
 
