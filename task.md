@@ -27,7 +27,7 @@
 - [x] Pruebas: pytest (14) y JUnit/MockMvc
 - [x] GitHub Actions: pruebas de ambos servicios y smoke test con `docker compose`
 
-## Fase 1 — Núcleo vendible (MVP) 🟡 casi completa
+## Fase 1 — Núcleo vendible (MVP) ✅
 
 ### Seguridad y autenticación ✅
 - [x] `spring-boot-starter-security` y `spring-boot-starter-oauth2-resource-server` (Spring Boot 3.5.16)
@@ -61,7 +61,7 @@
 - [x] `GET /api/simulations` solo para ADMIN, con filtros `userId`, `from` y `to`
 - [x] Dashboard con filtros por fecha y usuario, solo para ADMIN
 - [x] Advisory lock de PostgreSQL para que, cuando la caché vence, solo una petición llame a Alpha Vantage
-- [ ] Resilience4j: reintento y circuit breaker hacia el calc-engine y Alpha Vantage
+- [x] Resilience4j: 3 intentos con backoff (200 ms, 400 ms) y circuit breaker (se abre con 50 % de fallos y espera 30 s) hacia el calc-engine y Alpha Vantage. Solo se reintentan fallos de red y 5xx; los 4xx y las respuestas de límite de Alpha Vantage no, para no gastar la cuota
 
 ### Auditoría ✅
 - [x] `GET /api/audit` (IT_MANAGER/ADMIN), paginado y con filtros por acción, actor y fecha
@@ -69,12 +69,12 @@
 
 ### Calidad
 - [x] Pruebas de integración con **Testcontainers** (`InstallationFlowIT`: Postgres real, Flyway y validación del esquema) en CI
-- [x] Pruebas unitarias de auth, usuarios, simulaciones y seguridad de endpoints (27)
+- [x] Pruebas unitarias de auth, JWT, usuarios, simulaciones, auditoría, resiliencia y seguridad de endpoints (51)
 - [x] Smoke test en CI con el flujo completo autenticado sobre `docker compose`
-- [x] Reporte de cobertura JaCoCo publicado como artefacto en CI
-- [ ] Umbral de cobertura ≥ 80 % que haga fallar el build
-- [ ] Linters: Spotless (Java) y Ruff (Python) en CI
-- [ ] Logs en JSON con `traceId` por petición
+- [x] Reporte de cobertura JaCoCo (unitarias + integración combinadas) publicado como artefacto en CI
+- [x] Umbral: cada clase `*Service` necesita ≥ 80 % de líneas cubiertas solo con pruebas unitarias; si no, `verify` falla (igual en local y en CI)
+- [x] Linters: Spotless con palantir-java-format en `verify` (`./mvnw spotless:apply` corrige) y Ruff (`ruff check` + `ruff format --check`) en CI
+- [x] Logs en JSON (ECS) en Docker con `traceId` por petición: se respeta el `X-Request-Id` entrante, se devuelve en la respuesta y en los errores (`traceId`) y se propaga al calc-engine, que también registra en JSON
 
 > **Limitación conocida:** un access token sigue siendo válido hasta su vencimiento (15 min) aunque se
 > cambie el rol o se desactive al usuario; lo que se revoca de inmediato es el refresh token. Si un

@@ -29,8 +29,8 @@ public class DashboardController {
     private final CalcEngineClient calcEngine;
     private final RitechProperties properties;
 
-    public DashboardController(SimulationService simulations, CalcEngineClient calcEngine,
-                               RitechProperties properties) {
+    public DashboardController(
+            SimulationService simulations, CalcEngineClient calcEngine, RitechProperties properties) {
         this.simulations = simulations;
         this.calcEngine = calcEngine;
         this.properties = properties;

@@ -47,8 +47,8 @@ public class SimulationController {
     @ResponseStatus(HttpStatus.CREATED)
     @PreAuthorize("hasAnyRole('INVESTOR', 'ADMIN')")
     @Operation(summary = "Run a simulation for the authenticated user: return = 2 x NASDAQ 100 daily variation")
-    public SimulationResponse create(@Parameter(hidden = true) CurrentUser user,
-                                     @Valid @RequestBody CreateSimulationRequest request) {
+    public SimulationResponse create(
+            @Parameter(hidden = true) CurrentUser user, @Valid @RequestBody CreateSimulationRequest request) {
         return SimulationResponse.from(service.simulate(user.id(), request.initialCapital()));
     }
 
@@ -60,7 +60,8 @@ public class SimulationController {
 
     @GetMapping
     @PreAuthorize("hasRole('ADMIN')")
-    @Operation(summary = "All simulations, filterable by user and date range (ADMIN). Investors use /api/me/simulations")
+    @Operation(
+            summary = "All simulations, filterable by user and date range (ADMIN). Investors use /api/me/simulations")
     public Page<SimulationResponse> list(
             @RequestParam(required = false) UUID userId,
             @RequestParam(required = false) LocalDate from,

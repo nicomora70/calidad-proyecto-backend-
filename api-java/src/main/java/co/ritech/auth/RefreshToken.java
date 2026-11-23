@@ -31,8 +31,7 @@ public class RefreshToken {
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
-    protected RefreshToken() {
-    }
+    protected RefreshToken() {}
 
     public RefreshToken(UUID userId, String tokenHash, Instant expiresAt, Instant now) {
         this.id = UUID.randomUUID();
@@ -56,10 +55,27 @@ public class RefreshToken {
         }
     }
 
-    public UUID getId() { return id; }
-    public UUID getUserId() { return userId; }
-    public String getTokenHash() { return tokenHash; }
-    public Instant getExpiresAt() { return expiresAt; }
-    public Instant getRevokedAt() { return revokedAt; }
-    public Instant getCreatedAt() { return createdAt; }
+    public UUID getId() {
+        return id;
+    }
+
+    public UUID getUserId() {
+        return userId;
+    }
+
+    public String getTokenHash() {
+        return tokenHash;
+    }
+
+    public Instant getExpiresAt() {
+        return expiresAt;
+    }
+
+    public Instant getRevokedAt() {
+        return revokedAt;
+    }
+
+    public Instant getCreatedAt() {
+        return createdAt;
+    }
 }

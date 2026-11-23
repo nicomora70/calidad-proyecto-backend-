@@ -77,6 +77,13 @@ cd api-java
 `./mvnw verify` corre las pruebas unitarias y las de integración (`*IT`, con Testcontainers).
 Las de integración se omiten solas si no hay Docker disponible; en CI siempre corren.
 
+`verify` también falla si:
+- el código no está formateado → `./mvnw spotless:apply` lo corrige;
+- alguna clase `*Service` tiene menos del 80 % de líneas cubiertas por pruebas unitarias.
+  El reporte queda en `api-java/target/site/jacoco/index.html`.
+
+En Python: `ruff check --fix . && ruff format .` antes de subir cambios.
+
 Para levantar solo la base de datos: `docker compose up -d postgres`. Ojo: en
 `docker-compose.yml` Postgres no publica el puerto 5432; para conectarse desde el
 equipo hay que agregar `ports: ["5432:5432"]`.
@@ -84,6 +91,6 @@ equipo hay que agregar `ports: ["5432:5432"]`.
 ## Estado
 
 - **Fase 0** ✅ base del proyecto
-- **Fase 1** 🟡 autenticación JWT, usuarios, roles, historial y auditoría hechos; faltan
-  Resilience4j, linters, logs en JSON y el umbral de cobertura
+- **Fase 1** ✅ autenticación JWT, usuarios, roles, historial, auditoría, resiliencia, logs en
+  JSON con `traceId` y controles de calidad en CI
 - Siguientes: IA integrada, noticias y notificaciones (ver [task.md](task.md))

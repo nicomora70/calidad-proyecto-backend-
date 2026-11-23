@@ -47,12 +47,27 @@ public class AuditController {
         return service.search(action, actorId, range, pageable).map(AuditEntryResponse::from);
     }
 
-    public record AuditEntryResponse(UUID id, UUID actorId, String action, String entityType,
-                                     UUID entityId, String details, String ipAddress,
-                                     String userAgent, Instant createdAt) {
+    public record AuditEntryResponse(
+            UUID id,
+            UUID actorId,
+            String action,
+            String entityType,
+            UUID entityId,
+            String details,
+            String ipAddress,
+            String userAgent,
+            Instant createdAt) {
         static AuditEntryResponse from(AuditLog a) {
-            return new AuditEntryResponse(a.getId(), a.getActorId(), a.getAction(), a.getEntityType(),
-                    a.getEntityId(), a.getDetails(), a.getIpAddress(), a.getUserAgent(), a.getCreatedAt());
+            return new AuditEntryResponse(
+                    a.getId(),
+                    a.getActorId(),
+                    a.getAction(),
+                    a.getEntityType(),
+                    a.getEntityId(),
+                    a.getDetails(),
+                    a.getIpAddress(),
+                    a.getUserAgent(),
+                    a.getCreatedAt());
         }
     }
 }

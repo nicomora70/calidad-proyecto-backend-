@@ -42,8 +42,7 @@ public class AuditService {
                 userAgent = userAgent.substring(0, MAX_USER_AGENT);
             }
         }
-        repository.save(new AuditLog(actorId, action, entityType, entityId, details, ip, userAgent,
-                clock.instant()));
+        repository.save(new AuditLog(actorId, action, entityType, entityId, details, ip, userAgent, clock.instant()));
     }
 
     @Transactional(readOnly = true)

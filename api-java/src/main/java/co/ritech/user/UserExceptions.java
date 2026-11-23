@@ -8,8 +8,7 @@ import co.ritech.common.BusinessException;
 
 public final class UserExceptions {
 
-    private UserExceptions() {
-    }
+    private UserExceptions() {}
 
     public static class UserNotFoundException extends BusinessException {
         public UserNotFoundException(UUID id) {
@@ -25,8 +24,7 @@ public final class UserExceptions {
 
     public static class LastAdminException extends BusinessException {
         public LastAdminException() {
-            super(HttpStatus.CONFLICT, "LAST_ADMIN",
-                    "The installation must keep at least one active administrator");
+            super(HttpStatus.CONFLICT, "LAST_ADMIN", "The installation must keep at least one active administrator");
         }
     }
 }

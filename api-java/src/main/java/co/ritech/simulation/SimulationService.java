@@ -37,9 +37,13 @@ public class SimulationService {
     private final AuditService auditService;
     private final Clock clock;
 
-    public SimulationService(RitechProperties properties, MarketVariationService marketVariationService,
-                             CalcEngineClient calcEngine, SimulationRepository repository,
-                             AuditService auditService, Clock clock) {
+    public SimulationService(
+            RitechProperties properties,
+            MarketVariationService marketVariationService,
+            CalcEngineClient calcEngine,
+            SimulationRepository repository,
+            AuditService auditService,
+            Clock clock) {
         this.properties = properties;
         this.marketVariationService = marketVariationService;
         this.calcEngine = calcEngine;
@@ -60,11 +64,23 @@ public class SimulationService {
         var result = calcEngine.calculateReturn(initialCapital, variation.getChangePct());
 
         Simulation simulation = repository.save(new Simulation(
-                userId, result.initialCapital(), currency, variation.getSymbol(),
-                variation.getMarketDate(), variation.getChangePct(), result.leverage(),
-                result.returnPct(), result.finalAmount(), result.profit(), clock.instant()));
+                userId,
+                result.initialCapital(),
+                currency,
+                variation.getSymbol(),
+                variation.getMarketDate(),
+                variation.getChangePct(),
+                result.leverage(),
+                result.returnPct(),
+                result.finalAmount(),
+                result.profit(),
+                clock.instant()));
 
-        auditService.record(userId, "SIMULATION_CREATED", "SIMULATION", simulation.getId(),
+        auditService.record(
+                userId,
+                "SIMULATION_CREATED",
+                "SIMULATION",
+                simulation.getId(),
                 "capital=" + initialCapital.toPlainString() + " return_pct=" + result.returnPct());
         return simulation;
     }
@@ -72,7 +88,8 @@ public class SimulationService {
     /** Owner or ADMIN; otherwise 404 so ids of other users' simulations are not disclosed. */
     @Transactional(readOnly = true)
     public Simulation get(UUID id, CurrentUser caller) {
-        return repository.findById(id)
+        return repository
+                .findById(id)
                 .filter(s -> caller.isAdmin() || s.getUserId().equals(caller.id()))
                 .orElseThrow(() -> new SimulationNotFoundException(id));
     }

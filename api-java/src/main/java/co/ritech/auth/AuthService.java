@@ -50,9 +50,14 @@ public class AuthService {
     /** Compared against when the email does not exist, so response time does not leak it. */
     private final String dummyHash;
 
-    public AuthService(UserRepository users, RefreshTokenRepository refreshTokens,
-                       PasswordEncoder passwordEncoder, JwtService jwtService, AuditService audit,
-                       RitechProperties properties, Clock clock) {
+    public AuthService(
+            UserRepository users,
+            RefreshTokenRepository refreshTokens,
+            PasswordEncoder passwordEncoder,
+            JwtService jwtService,
+            AuditService audit,
+            RitechProperties properties,
+            Clock clock) {
         this.users = users;
         this.refreshTokens = refreshTokens;
         this.passwordEncoder = passwordEncoder;
@@ -66,7 +71,8 @@ public class AuthService {
     @Transactional(noRollbackFor = BusinessException.class)
     public TokenResponse login(String email, String password) {
         Instant now = clock.instant();
-        User user = users.findByEmailAndDeletedAtIsNull(User.normalizeEmail(email)).orElse(null);
+        User user =
+                users.findByEmailAndDeletedAtIsNull(User.normalizeEmail(email)).orElse(null);
         if (user == null) {
             passwordEncoder.matches(password, dummyHash);
             audit.record(null, "LOGIN_FAILED", "USER", null, "unknown email");
@@ -93,8 +99,8 @@ public class AuthService {
     @Transactional(noRollbackFor = BusinessException.class)
     public TokenResponse refresh(String rawToken) {
         Instant now = clock.instant();
-        RefreshToken token = refreshTokens.findByTokenHash(hash(rawToken))
-                .orElseThrow(InvalidRefreshTokenException::new);
+        RefreshToken token =
+                refreshTokens.findByTokenHash(hash(rawToken)).orElseThrow(InvalidRefreshTokenException::new);
         if (token.isRevoked()) {
             // A revoked token being reused means it was probably stolen: kill every session.
             refreshTokens.revokeAllForUser(token.getUserId(), now);
@@ -145,8 +151,13 @@ public class AuthService {
         String rawRefresh = Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
         Instant refreshExpiresAt = now.plus(settings.refreshTokenTtl());
         refreshTokens.save(new RefreshToken(user.getId(), hash(rawRefresh), refreshExpiresAt, now));
-        return new TokenResponse(jwtService.issueAccessToken(user), "Bearer",
-                jwtService.accessTokenTtlSeconds(), rawRefresh, refreshExpiresAt, UserResponse.from(user));
+        return new TokenResponse(
+                jwtService.issueAccessToken(user),
+                "Bearer",
+                jwtService.accessTokenTtlSeconds(),
+                rawRefresh,
+                refreshExpiresAt,
+                UserResponse.from(user));
     }
 
     static String hash(String raw) {

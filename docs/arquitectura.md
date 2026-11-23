@@ -27,8 +27,9 @@ deterministas y sin estado.
 
 - **Java**: Spring Boot 3.5.16, Spring Web, Spring Data JPA (Hibernate), Flyway, Bean Validation,
   springdoc-openapi (Swagger), Actuator, RestClient, Spring Security con OAuth2 Resource Server
-  (JWT HS256), Testcontainers y JaCoCo. Próximas fases: Spring Mail, `@Scheduled` y Resilience4j.
-- **Python**: FastAPI, Pydantic v2, Uvicorn, pytest. A partir de la Fase 2: NumPy.
+  (JWT HS256), Resilience4j, Testcontainers, JaCoCo y Spotless. Próximas fases: Spring Mail y
+  `@Scheduled`.
+- **Python**: FastAPI, Pydantic v2, Uvicorn, pytest y Ruff. A partir de la Fase 2: NumPy.
 - **Infraestructura**: Docker multi-stage con usuario no root, healthchecks y GitHub Actions
   (pruebas y smoke test con `docker compose`).
 
@@ -52,6 +53,20 @@ Los campos van en `snake_case` y los decimales como string para no perder precis
 ```
 
 Timeout de 5 s. Ante un fallo, la API responde `503 CALC_ENGINE_UNAVAILABLE`.
+
+## Resiliencia y trazabilidad
+
+- **Reintentos y circuit breaker** (`common/ResilientCall`, Resilience4j) en las llamadas al
+  calc-engine y a Alpha Vantage: 3 intentos con backoff exponencial (200 ms y 400 ms) solo
+  ante fallos de red o 5xx. Si falla el 50 % de las últimas 10 llamadas (mínimo 5), el circuito
+  se abre 30 s y las peticiones fallan de inmediato con `503`/`502`, sin cargar al servicio caído.
+- **Trace id por petición** (`common/RequestIdFilter`): se reutiliza el `X-Request-Id` del
+  proxy o del frontend si es válido (8–64 caracteres `[A-Za-z0-9._-]`); si no, se genera un UUID.
+  Va en la cabecera de respuesta, en el campo `traceId` de todo error RFC 7807, en los logs y en
+  las llamadas al calc-engine.
+- **Logs**: en Docker los dos servicios escriben JSON (formato ECS en Java), una línea por evento
+  con `traceId`, listos para Loki, ELK o CloudWatch. En desarrollo local, Java usa texto plano
+  con `[traceId]` en cada línea.
 
 ## API pública (para el equipo de frontend)
 

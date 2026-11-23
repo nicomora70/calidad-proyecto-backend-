@@ -26,7 +26,6 @@ public class FixedMarketDataProvider implements MarketDataProvider {
 
     @Override
     public MarketQuote fetchLatestQuote(String symbol) {
-        return new MarketQuote(symbol, LocalDate.now(clock),
-                properties.market().fixedVariationPct(), "FIXED");
+        return new MarketQuote(symbol, LocalDate.now(clock), properties.market().fixedVariationPct(), "FIXED");
     }
 }

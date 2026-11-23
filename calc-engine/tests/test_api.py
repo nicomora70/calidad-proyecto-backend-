@@ -9,6 +9,17 @@ def test_health():
     assert client.get("/health").json()["status"] == "UP"
 
 
+def test_request_id_is_propagated_from_caller():
+    response = client.get("/health", headers={"X-Request-Id": "trace-abc-123"})
+    assert response.headers["X-Request-Id"] == "trace-abc-123"
+
+
+def test_invalid_request_id_is_replaced():
+    response = client.get("/health", headers={"X-Request-Id": "bad id with spaces"})
+    assert response.headers["X-Request-Id"] != "bad id with spaces"
+    assert len(response.headers["X-Request-Id"]) == 36  # generated UUID
+
+
 def test_returns_endpoint():
     body = client.post(
         "/calculations/returns",

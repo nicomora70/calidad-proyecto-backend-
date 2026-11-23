@@ -49,6 +49,9 @@ services:
       BOOTSTRAP_ADMIN_EMAIL: ${BOOTSTRAP_ADMIN_EMAIL:-}
       BOOTSTRAP_ADMIN_PASSWORD: ${BOOTSTRAP_ADMIN_PASSWORD:-}
       BOOTSTRAP_ADMIN_NAME: ${BOOTSTRAP_ADMIN_NAME:-Administrator}
+      # JSON logs (Elastic Common Schema), one line per event, with traceId
+      LOGGING_STRUCTURED_FORMAT_CONSOLE: ecs
+      LOGGING_STRUCTURED_ECS_SERVICE_NAME: ritech-api
     ports:
       - "${API_PORT:-8080}:8080"
     networks: [internal]

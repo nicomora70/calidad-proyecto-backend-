@@ -52,13 +52,20 @@ public class Simulation {
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
-    protected Simulation() {
-    }
+    protected Simulation() {}
 
-    public Simulation(UUID userId, BigDecimal initialCapital, String currency, String symbol,
-                      LocalDate marketDate, BigDecimal marketVariationPct, BigDecimal leverage,
-                      BigDecimal returnPct, BigDecimal finalAmount, BigDecimal profit,
-                      Instant createdAt) {
+    public Simulation(
+            UUID userId,
+            BigDecimal initialCapital,
+            String currency,
+            String symbol,
+            LocalDate marketDate,
+            BigDecimal marketVariationPct,
+            BigDecimal leverage,
+            BigDecimal returnPct,
+            BigDecimal finalAmount,
+            BigDecimal profit,
+            Instant createdAt) {
         this.id = UUID.randomUUID();
         this.userId = userId;
         this.initialCapital = initialCapital;
@@ -73,16 +80,51 @@ public class Simulation {
         this.createdAt = createdAt;
     }
 
-    public UUID getId() { return id; }
-    public UUID getUserId() { return userId; }
-    public BigDecimal getInitialCapital() { return initialCapital; }
-    public String getCurrency() { return currency; }
-    public String getSymbol() { return symbol; }
-    public LocalDate getMarketDate() { return marketDate; }
-    public BigDecimal getMarketVariationPct() { return marketVariationPct; }
-    public BigDecimal getLeverage() { return leverage; }
-    public BigDecimal getReturnPct() { return returnPct; }
-    public BigDecimal getFinalAmount() { return finalAmount; }
-    public BigDecimal getProfit() { return profit; }
-    public Instant getCreatedAt() { return createdAt; }
+    public UUID getId() {
+        return id;
+    }
+
+    public UUID getUserId() {
+        return userId;
+    }
+
+    public BigDecimal getInitialCapital() {
+        return initialCapital;
+    }
+
+    public String getCurrency() {
+        return currency;
+    }
+
+    public String getSymbol() {
+        return symbol;
+    }
+
+    public LocalDate getMarketDate() {
+        return marketDate;
+    }
+
+    public BigDecimal getMarketVariationPct() {
+        return marketVariationPct;
+    }
+
+    public BigDecimal getLeverage() {
+        return leverage;
+    }
+
+    public BigDecimal getReturnPct() {
+        return returnPct;
+    }
+
+    public BigDecimal getFinalAmount() {
+        return finalAmount;
+    }
+
+    public BigDecimal getProfit() {
+        return profit;
+    }
+
+    public Instant getCreatedAt() {
+        return createdAt;
+    }
 }

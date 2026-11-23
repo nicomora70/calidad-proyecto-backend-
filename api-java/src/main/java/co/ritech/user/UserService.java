@@ -31,8 +31,12 @@ public class UserService {
     private final AuditService audit;
     private final Clock clock;
 
-    public UserService(UserRepository users, RefreshTokenRepository refreshTokens,
-                       PasswordEncoder passwordEncoder, AuditService audit, Clock clock) {
+    public UserService(
+            UserRepository users,
+            RefreshTokenRepository refreshTokens,
+            PasswordEncoder passwordEncoder,
+            AuditService audit,
+            Clock clock) {
         this.users = users;
         this.refreshTokens = refreshTokens;
         this.passwordEncoder = passwordEncoder;
@@ -46,8 +50,13 @@ public class UserService {
         if (users.existsByEmailAndDeletedAtIsNull(email)) {
             throw new EmailAlreadyExistsException(email);
         }
-        User user = new User(request.fullName(), email, request.role(),
-                passwordEncoder.encode(request.temporaryPassword()), true, clock.instant());
+        User user = new User(
+                request.fullName(),
+                email,
+                request.role(),
+                passwordEncoder.encode(request.temporaryPassword()),
+                true,
+                clock.instant());
         try {
             users.saveAndFlush(user);
         } catch (DataIntegrityViolationException ex) {
@@ -82,8 +91,8 @@ public class UserService {
                 refreshTokens.revokeAllForUser(user.getId(), now);
             }
             user.setActive(request.active(), now);
-            audit.record(actor.id(), request.active() ? "USER_ACTIVATED" : "USER_DEACTIVATED",
-                    "USER", user.getId(), null);
+            audit.record(
+                    actor.id(), request.active() ? "USER_ACTIVATED" : "USER_DEACTIVATED", "USER", user.getId(), null);
         }
         return user;
     }

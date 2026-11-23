@@ -11,18 +11,25 @@ public final class TestFixtures {
 
     public static final String JWT_SECRET = "test-secret-test-secret-test-secret-0123456789";
 
-    private TestFixtures() {
-    }
+    private TestFixtures() {}
 
     public static RitechProperties properties() {
         return new RitechProperties(
                 new RitechProperties.Simulation(new BigDecimal("100000"), "COP"),
-                new RitechProperties.Market("fixed", "QQQ", "", "http://unused",
-                        new BigDecimal("1.0"), Duration.ofHours(6)),
+                new RitechProperties.Market(
+                        "fixed", "QQQ", "", "http://unused", new BigDecimal("1.0"), Duration.ofHours(6)),
                 new RitechProperties.CalcEngine("http://unused", Duration.ofSeconds(1)),
                 new RitechProperties.Cors(List.of("http://localhost:3000")),
-                new RitechProperties.Security(JWT_SECRET, "ritech-api", Duration.ofMinutes(15),
-                        Duration.ofDays(7), 5, Duration.ofMinutes(15), "", "", "Administrator"),
+                new RitechProperties.Security(
+                        JWT_SECRET,
+                        "ritech-api",
+                        Duration.ofMinutes(15),
+                        Duration.ofDays(7),
+                        5,
+                        Duration.ofMinutes(15),
+                        "",
+                        "",
+                        "Administrator"),
                 ZoneId.of("America/Bogota"));
     }
 }

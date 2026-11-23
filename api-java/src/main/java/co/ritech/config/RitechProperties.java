@@ -24,25 +24,25 @@ public record RitechProperties(
 
     public record Simulation(
             @DefaultValue("100000") BigDecimal minCapital,
-            @DefaultValue("COP") String currency) {
-    }
+            @DefaultValue("COP") String currency) {}
 
     public record Market(
             @DefaultValue("fixed") String provider,
             @DefaultValue("QQQ") String symbol,
             @DefaultValue("") String alphaVantageApiKey,
-            @DefaultValue("https://www.alphavantage.co/query") String alphaVantageUrl,
+
+            @DefaultValue("https://www.alphavantage.co/query")
+            String alphaVantageUrl,
+
             @DefaultValue("1.0") BigDecimal fixedVariationPct,
-            @DefaultValue("6h") Duration cacheTtl) {
-    }
+            @DefaultValue("6h") Duration cacheTtl) {}
 
     public record CalcEngine(
             @DefaultValue("http://localhost:8000") String baseUrl,
-            @DefaultValue("5s") Duration timeout) {
-    }
+            @DefaultValue("5s") Duration timeout) {}
 
-    public record Cors(@DefaultValue("http://localhost:3000") List<String> allowedOrigins) {
-    }
+    public record Cors(
+            @DefaultValue("http://localhost:3000") List<String> allowedOrigins) {}
 
     public record Security(
             /* HMAC-SHA256 key, at least 32 bytes. Unique per client installation. */
@@ -54,6 +54,5 @@ public record RitechProperties(
             @DefaultValue("15m") Duration lockDuration,
             @DefaultValue("") String bootstrapAdminEmail,
             @DefaultValue("") String bootstrapAdminPassword,
-            @DefaultValue("Administrator") String bootstrapAdminName) {
-    }
+            @DefaultValue("Administrator") String bootstrapAdminName) {}
 }
